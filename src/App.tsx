@@ -84,13 +84,8 @@ function App() {
       <section className="py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {selectedCategory ? (
-            <motion.div
-              key={selectedCategory}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-              className="rounded-2xl border border-surface-200 bg-white p-8 shadow-card"
-            >
+            <div className="rounded-2xl border border-surface-200 bg-white p-8 shadow-card">
+
               <h2 className="font-display text-2xl font-semibold text-surface-900">
                 {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Collection
               </h2>
@@ -102,13 +97,9 @@ function App() {
               <div className="mt-8">
                 <MosaicGrid category={selectedCategory} />
               </div>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-16 text-center"
-            >
+            <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="rounded-2xl bg-surface-100 p-6">
                 <Grid3X3 className="h-12 w-12 text-surface-400" />
               </div>
@@ -118,7 +109,7 @@ function App() {
               <p className="mt-2 max-w-md text-surface-600">
                 Select a mosaic category above to browse available designs and start creating your custom pattern.
               </p>
-            </motion.div>
+            </div>
           )}
         </div>
       </section>
