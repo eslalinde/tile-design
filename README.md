@@ -314,9 +314,9 @@ export const HexColorsList: MosaicColor[] = [
 # 🚧 Construction Phases
 
 ### Phase 1 – Base Infrastructure
-* [ ] React app bootstrap
-* [ ] Git ignore configuration
-* [ ] Supabase setup (separate `/supabase` folder)
+* [x] React app bootstrap
+* [x] Git ignore configuration
+* [x] Supabase setup (separate `/supabase` folder)
 * [ ] Static catalog
 * [ ] Simple SVG viewer
 

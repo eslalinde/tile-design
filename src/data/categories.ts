@@ -16,3 +16,5 @@ export const categories: Category[] = [
 
 export type CategoryName = (typeof categories)[number]["name"];
 
+
+

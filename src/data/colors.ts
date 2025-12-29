@@ -52,3 +52,5 @@ export function getColorByHex(hex: string): MosaicColor | undefined {
   return HexColorsList.find((c) => c.hex.toLowerCase() === hex.toLowerCase());
 }
 
+
+
