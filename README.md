@@ -356,6 +356,7 @@ export const HexColorsList: MosaicColor[] = [
 * [x] Simple SVG viewer
 
 ### Phase 2 – Constructor
+* [ ] Seed SVG with parts
 * [ ] Part selection
 * [ ] Color changes
 * [ ] Rotation & flip
