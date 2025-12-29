@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { CategoryNav } from "@/components/CategoryNav";
+import { MosaicGrid } from "@/components/MosaicGrid";
 import type { CategoryName } from "@/data/categories";
 import { Palette, Grid3X3, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
@@ -97,14 +98,9 @@ function App() {
                 Select a mosaic from this collection to start customizing.
               </p>
 
-              {/* Placeholder for mosaic grid - will be implemented in Phase 2 */}
-              <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square animate-pulse rounded-xl bg-surface-100"
-                  />
-                ))}
+              {/* Mosaic grid with tiles from Supabase */}
+              <div className="mt-8">
+                <MosaicGrid category={selectedCategory} />
               </div>
             </motion.div>
           ) : (

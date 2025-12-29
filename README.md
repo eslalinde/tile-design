@@ -250,6 +250,40 @@ interface MosaicState {
 * **metadata** (jsonb)
 * **status**
 
+## PRD – Public Mosaic Query by Category
+
+### Objective
+Allow public, read-only access to mosaics filtered by category for catalog visualization and design selection.
+
+### Scope
+- Retrieve mosaics by category.
+- Public access without user authentication.
+- Read-only operations only.
+
+### Business Rules
+- Each mosaic belongs to a single category.
+- Only public mosaics can be queried.
+- Categories must be predefined in the system.
+- Mosaic data must be immutable through public endpoints.
+
+### Non-Functional Requirements
+- The endpoint must support pagination.
+- Average response time should be under 500 ms.
+- The system must not expose sensitive data.
+- The service must be scalable for public traffic.
+
+### Security Considerations
+- Public access is allowed for read-only operations.
+- No create, update, or delete actions are permitted.
+- Abuse prevention mechanisms should be in place.
+
+### Usage Example
+**Input:**
+- Category: `paris`
+
+**Output:**
+- List of mosaics associated with the selected category.
+
 ---
 
 ## 🧩 SVG Definition (Partial)
@@ -317,8 +351,9 @@ export const HexColorsList: MosaicColor[] = [
 * [x] React app bootstrap
 * [x] Git ignore configuration
 * [x] Supabase setup (separate `/supabase` folder)
-* [ ] Static catalog
-* [ ] Simple SVG viewer
+* [x] Static catalog on supabase
+* [x] Get tiles from supabase
+* [x] Simple SVG viewer
 
 ### Phase 2 – Constructor
 * [ ] Part selection
