@@ -35,25 +35,50 @@ Key characteristics:
 
 ## 👤 User Flow
 
-1. User selects a mosaic category
-2. User selects a mosaic from that category
-3. User selects a customizable part of the mosaic
-4. User selects a color from the color palette
-5. User can repeat color changes an unlimited number of times
-6. User can save the mosaic design
-7. If the user is not authenticated, the system requests:
-   - Name
-   - Email
-   - Company
-8. User must accept **personal data treatment (Habeas Data – Colombia)**
-9. User can view saved mosaics
-10. User can request a quote for:
-    - The current mosaic
-    - A saved mosaic
-11. User completes the quotation form
-12. The system sends an email to:
-    - Quotation team
-    - User
+1. User access the build your design Page
+2. User select the category
+3. Page present the tiles for the category selected
+4. User selects a tile
+5. Page presents the builder UI with the selected tile and the following components
+   - SVG preview
+   - List of parts that compose the SVG
+   - The 5x5 matrix to show the draw or pattern of the tiles
+   - Operate buttons like undo, redo, save, clean, quote
+   - Color palette
+6. User select one of the parts of the SVGs
+7. User select a color from the palette
+8. System reflects the color selected in the SVG preview and the matrix
+9. User select other parts of the SVG and change the color until the user decide the mosaic is finished.
+10. User Save or Quote the mosaic
+11. If user save the mosaic an auto-save on localStorage is done (if the user want to quote) the user needs to provide a name for the saved mosaic
+12. A list of saved mosaics for the page session is shown with preview
+13. User select the quote option. If not authenticated: System shows authentication modal with benefits
+14. User completes authentication (or continues as guest)
+15. User accepts **personal data treatment (Habeas Data – Colombia)**
+16. System presents the fill the quote form (firstName, lastName, email, phoneNumber, quantityBorder, quantityMosaic) and the mosaic to quote in preview
+17. The authenticated user have the option to see past quotes and saved mosaics
+
+* localStorage should be persistent everytime the user access the page again, so we can keep saved designs in the same browser
+
+Note: In the future some mosaic are going to be an image, so the part and color selection are not going to be available.
+
+---
+
+## Quote information
+
+The following are the requirements
+- First name (required)
+- Last name (required)
+- Email (required)
+- Phone number (requiered)
+- Quantity (required): number of meters requested
+- Quantity Border (optional): number of meters
+
+The quote should be send by email to the sales department and to the user.
+The quote should be saved to the Database
+If the user 
+
+Note: there is a some tech challenge to sent the mosaic as an image by email
 
 ---
 
@@ -108,7 +133,7 @@ The application must support:
 - Border mosaics are more complex and may include:
   - Corners
   - 1–2 additional tiles
-- Each SVG includes **custom tags** (`part#`) to identify colorable regions
+- Each SVG includes g properties to group (`part#`) to identify colorable regions
 - Color changes apply to entire parts
 - Each tile can be:
   - Rotated
@@ -130,12 +155,97 @@ The application must support:
 
 ## 🖼 UI Layout
 
-### Page Structure
-- Centered content
-- Title
-- Category menu
-- Mosaic constructor
-- Footer
+Step 1        Step 2        Step 3         Step 4
+●────────────○────────────○────────────○
+Category     Tile          Design          Save / Quote
+
+┌────────────────────────────────────────┐
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Category │ │ Category │ │ Category │ │
+│ │ Name     │ │ Name     │ │ Name     │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+└────────────────────────────────────────┘
+
+Step 1        Step 2        Step 3         Step 4
+●────────────●────────────○────────────○
+Category     Tile          Design          Save / Quote
+
+┌────────────────────────────────────────┐
+│  ┌────────┐ ┌────────┐                 │
+│  │ Tile   │ │ Tile   │                 │
+│  │ Preview│ │ Preview│                 │
+│  │ SVG    │ │ Image  │                 │
+│  └────────┘ └────────┘                 │
+└────────────────────────────────────────┘
+Step 1        Step 2        Step 3         Step 4
+●────────────●────────────●────────────○
+Category     Tile          Design          Save / Quote
+
+┌──────────────────────────────────────────────────────────┐
+│ Undo | Redo | Save | Clean | Quote                       │
+├──────────────┬───────────────────────────────────────────┤
+│ Parts        │                                           │
+│ Colors       │         5x5 MOSAIC MATRIX (LARGE)         │
+│ (Editor)     │         (Primary Focus Area)              │
+│              │                                           │
+│──────────────│                                           │
+│ SVG Preview  │                                           │
+│ (Small)      │                                           │
+└──────────────┴───────────────────────────────────────────┘
+
+Step 1        Step 2        Step 3         Step 4
+●────────────●────────────●────────────●
+Category     Tile          Design          Save / Quote
+┌──────────────────────────────────────────────┐
+│ Saved Designs                                │
+├──────────────────────────────────────────────┤
+│ ┌──────┐ ┌──────┐ ┌──────┐                   │
+│ │Prev  │ │Prev  │ │Prev  │                   │
+│ │Name  │ │Name  │ │Name  │                   │
+│ └──────┘ └──────┘ └──────┘                   │
+└──────────────────────────────────────────────┘
+
+### Parts UI specification
+
+#### Parts
+The parts are the <g> element with id equals part#, we need to paint in a small box the svg part.
+Add hover highlights on SVG parts, a selection indicator, and a parts legend panel
+Add hover highlight + persistent selection outline, plus a Parts legend with thumbnails and human labels (“Border”, “Center”, “Dot”…). Show “Selected: Part X” near palette.
+
+#### Clean
+Rename to “Reset colors” / “Reset design” and Reset border and add a confirm dialog with scope + preview of impact.
+
+#### Colors
+Organize by: Neutrals, Warm, Earth, Cool, Accent + recent colors row
+
+#### Undo/Redo
+Undo/redo history - 20-state history with Ctrl+Z/Y support
+
+
+
+### Authentication modal
+┌──────────────────────────────────────────────┐
+│ Why create an account?                       │
+│ ✓ Save designs                               │
+│ ✓ Track quotes                               │
+│                                              │
+│ [ Login / Register ]                         │
+│ [ Continue as Guest ]                        │
+└──────────────────────────────────────────────┘
+
+### Quote modal
+┌──────────────────────────────────────────────┐
+│ Quote Request                                │
+├────────────────┬─────────────────────────────┤
+│ First Name     │ Mosaic Preview              │
+│ Last Name      │ (Read‑only)                 │
+│ Email          │                             │
+│ Phone          │                             │
+│ Qty Border     │                             │
+│ Qty Mosaic     │                             │
+│ Habeas Data    │                             │
+│ [ Request ]    │                             │
+└────────────────┴─────────────────────────────┘
 
 ### Categories
 ```ts
@@ -355,12 +465,15 @@ export const HexColorsList: MosaicColor[] = [
 * [x] Get tiles from supabase
 * [x] Simple SVG viewer
 
-### Phase 2 – Constructor
-* [ ] Seed SVG with parts
+### Phase 2 – Builder
+* [x] Seed SVG with parts
+* [ ] Stepper UI 
+* [ ] Basic Builder layout
 * [ ] Part selection
 * [ ] Color changes
 * [ ] Rotation & flip
-* [ ] Persistent state
+* [ ] Auto-save
+* [ ] Undo, Redo, Save
 
 ### Phase 3 – User & Storage
 * [ ] Authentication
