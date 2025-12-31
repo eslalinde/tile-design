@@ -26,17 +26,20 @@ export function Stepper({ steps, currentStep, onStepClick }: StepperProps) {
 
               return (
                 <li key={step.id} className="relative flex-1">
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-center">
                     {/* Connector line */}
                     {index > 0 && (
                       <div
                         className={cn(
-                          "absolute left-0 top-4 -ml-px h-0.5 w-full -translate-x-1/2",
+                          "absolute top-4 h-0.5",
                           isCompleted || isCurrent
                             ? "bg-brand-600"
                             : "bg-surface-200"
                         )}
-                        style={{ width: "calc(100% - 2rem)", left: "-50%" }}
+                        style={{ 
+                          width: "100%", 
+                          left: "-50%",
+                        }}
                       />
                     )}
 

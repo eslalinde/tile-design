@@ -14,12 +14,10 @@ function ColorButton({
   color,
   isSelected,
   onClick,
-  size = "normal",
 }: {
   color: MosaicColor;
   isSelected: boolean;
   onClick: () => void;
-  size?: "small" | "normal";
 }) {
   const brightness = parseInt(color.hex.slice(1), 16);
   const isDark = brightness < 0x888888;
@@ -30,11 +28,11 @@ function ColorButton({
       onClick={onClick}
       title={color.name}
       className={cn(
-        "group relative rounded-md transition-all duration-150 flex-shrink-0",
-        "hover:scale-125 hover:shadow-lg hover:z-20",
-        "focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-1 focus:ring-offset-surface-800",
-        size === "small" ? "h-6 w-6" : "h-8 w-8",
-        isSelected && "ring-2 ring-white ring-offset-2 ring-offset-surface-800 scale-110 z-10"
+        "group relative aspect-square rounded transition-all duration-150",
+        "hover:scale-110 hover:shadow-md hover:z-20",
+        "focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1",
+        "border border-surface-200",
+        isSelected && "ring-2 ring-brand-500 ring-offset-1 scale-105 z-10"
       )}
       style={{ backgroundColor: color.hex }}
     >
@@ -42,8 +40,7 @@ function ColorButton({
         <span className="absolute inset-0 flex items-center justify-center">
           <Check
             className={cn(
-              "drop-shadow-md",
-              size === "small" ? "h-3 w-3" : "h-4 w-4",
+              "h-3 w-3 drop-shadow-md",
               isDark ? "text-white" : "text-surface-800"
             )}
           />
@@ -51,7 +48,7 @@ function ColorButton({
       )}
 
       {/* Tooltip */}
-      <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-surface-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none z-30">
+      <span className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-surface-800 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none z-30">
         {color.name}
       </span>
     </button>
@@ -64,7 +61,7 @@ export function ColorDock({
   recentColors = [],
   selectedPartId,
 }: ColorDockProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const recentColorObjects = recentColors
     .map((hex) => HexColorsList.find((c) => c.hex === hex))
@@ -72,101 +69,77 @@ export function ColorDock({
     .slice(0, 6);
 
   return (
-    <div
-      className={cn(
-        "fixed bottom-0 left-0 right-0 z-40 transition-all duration-300",
-        "bg-gradient-to-t from-surface-900 via-surface-900 to-surface-800",
-        "border-t border-surface-700 shadow-elevated",
-        isExpanded ? "pb-4" : "pb-2"
-      )}
-    >
-      {/* Expand/Collapse button */}
+    <div className="rounded-lg border border-surface-200 bg-surface-50 overflow-hidden">
+      {/* Header - Clickable to expand/collapse */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-t-lg bg-surface-800 px-3 py-1 text-xs text-surface-300 hover:text-white transition-colors border border-b-0 border-surface-700"
+        className="w-full flex items-center justify-between px-3 py-2 bg-surface-100 hover:bg-surface-200 transition-colors"
       >
+        {/* Left: Title */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-surface-600 uppercase tracking-wider">
+            Colors
+          </span>
+          {selectedPartId && (
+            <span className="text-xs text-brand-600 font-medium">
+              → {selectedPartId}
+            </span>
+          )}
+        </div>
+
+        {/* Right: Expand/Collapse icon */}
         {isExpanded ? (
-          <>
-            <ChevronDown className="h-3 w-3" />
-            <span>Collapse</span>
-          </>
+          <ChevronUp className="h-4 w-4 text-surface-400" />
         ) : (
-          <>
-            <ChevronUp className="h-3 w-3" />
-            <span>Expand Colors</span>
-          </>
+          <ChevronDown className="h-4 w-4 text-surface-400" />
         )}
       </button>
 
-      <div className="mx-auto max-w-7xl px-4">
-        {/* Selection indicator */}
-        <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-surface-400 uppercase tracking-wider">
-              Colors
-            </span>
-            {selectedPartId ? (
-              <span className="text-xs text-accent-400">
-                Applying to: <span className="font-semibold">{selectedPartId}</span>
-              </span>
-            ) : (
-              <span className="text-xs text-surface-500 italic">
-                Select a part first
-              </span>
-            )}
-          </div>
-
+      {/* Color grid - Collapsible */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-in-out overflow-hidden",
+          isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        <div className="p-3">
           {/* Recent colors */}
           {recentColorObjects.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-surface-500">Recent:</span>
-              <div className="flex gap-1">
+            <div className="mb-3 pb-3 border-b border-surface-200">
+              <div className="text-[10px] font-medium text-surface-500 uppercase tracking-wider mb-2">
+                Recent
+              </div>
+              <div className="flex gap-1.5">
                 {recentColorObjects.map((color) => (
-                  <ColorButton
+                  <button
                     key={`recent-${color.hex}`}
-                    color={color}
-                    isSelected={selectedColor === color.hex}
                     onClick={() => onSelectColor(color)}
-                    size="small"
+                    className={cn(
+                      "h-6 w-6 rounded border border-surface-300 cursor-pointer hover:scale-110 transition-transform",
+                      selectedColor === color.hex && "ring-2 ring-brand-500"
+                    )}
+                    style={{ backgroundColor: color.hex }}
+                    title={color.name}
                   />
                 ))}
               </div>
             </div>
           )}
-        </div>
 
-        {/* Color grid - All 36 colors visible */}
-        <div
-          className={cn(
-            "transition-all duration-300 overflow-hidden",
-            isExpanded ? "max-h-48" : "max-h-12"
-          )}
-        >
-          {isExpanded ? (
-            // Expanded: Responsive grid
-            <div className="grid gap-1.5 py-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(32px, 1fr))' }}>
-              {HexColorsList.map((color) => (
-                <ColorButton
-                  key={color.hex}
-                  color={color}
-                  isSelected={selectedColor === color.hex}
-                  onClick={() => onSelectColor(color)}
-                />
-              ))}
-            </div>
-          ) : (
-            // Collapsed: Single row, horizontally scrollable on small screens
-            <div className="flex gap-1.5 py-1 overflow-x-auto scrollbar-thin scrollbar-thumb-surface-600 scrollbar-track-transparent">
-              {HexColorsList.map((color) => (
-                <ColorButton
-                  key={color.hex}
-                  color={color}
-                  isSelected={selectedColor === color.hex}
-                  onClick={() => onSelectColor(color)}
-                />
-              ))}
-            </div>
-          )}
+          {/* All colors - 6 columns grid */}
+          <div className="text-[10px] font-medium text-surface-500 uppercase tracking-wider mb-2">
+            All Colors
+          </div>
+          <div className="grid grid-cols-6 gap-1.5">
+            {HexColorsList.map((color) => (
+              <ColorButton
+                key={color.hex}
+                color={color}
+                isSelected={selectedColor === color.hex}
+                onClick={() => onSelectColor(color)}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -117,9 +117,11 @@ export function TileMatrix({
     return matrix;
   }, [rotation]);
 
-  // Determine which cells are border cells (edges of 5x5 grid)
+  // Determine which cells are border cells
+  // Main tiles: (0,0) to (3,3)
+  // Border: column 4 (0,4 to 4,4) and row 4 (4,0 to 4,4)
   const isBorderCell = (row: number, col: number): boolean => {
-    return row === 0 || row === 4 || col === 0 || col === 4;
+    return row === 4 || col === 4;
   };
 
   return (

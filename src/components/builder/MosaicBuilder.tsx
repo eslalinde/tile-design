@@ -5,7 +5,6 @@ import type { PartColor } from "@/types/mosaic";
 import type { MosaicColor } from "@/data/colors";
 import { CompactPartSelector } from "./CompactPartSelector";
 import { ColorDock } from "./ColorDock";
-import { FloatingPreview } from "./FloatingPreview";
 import { TileMatrix } from "./TileMatrix";
 import {
   Undo2,
@@ -14,7 +13,93 @@ import {
   RotateCcw,
   FileText,
   ChevronLeft,
+  ChevronRight,
+  Info,
 } from "lucide-react";
+
+// Collapsible Info Panel Component
+function InfoPanel({ mosaic, partsCount }: { mosaic: Mosaic; partsCount: number }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  if (isCollapsed) {
+    return (
+      <div className="flex-shrink-0 border-l border-surface-200 bg-white">
+        <button
+          onClick={() => setIsCollapsed(false)}
+          className="h-full w-10 flex flex-col items-center justify-center gap-2 hover:bg-surface-50 transition-colors"
+          title="Show info panel"
+        >
+          <Info className="h-4 w-4 text-surface-400" />
+          <ChevronLeft className="h-4 w-4 text-surface-400" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <aside className="w-56 flex-shrink-0 border-l border-surface-200 bg-white lg:w-64">
+      {/* Header with collapse button */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-200">
+        <h3 className="text-xs font-semibold text-surface-600 uppercase tracking-wider">
+          Tile Info
+        </h3>
+        <button
+          onClick={() => setIsCollapsed(true)}
+          className="p-1 rounded hover:bg-surface-100 transition-colors"
+          title="Hide info panel"
+        >
+          <ChevronRight className="h-4 w-4 text-surface-400" />
+        </button>
+      </div>
+
+      <div className="p-4">
+        {/* Original SVG Preview */}
+        <div className="mb-4">
+          <h4 className="text-[10px] font-semibold text-surface-500 uppercase tracking-wider mb-2">
+            Original
+          </h4>
+          <div className="rounded-lg bg-surface-50 p-3 border border-surface-200">
+            <div
+              className="aspect-square w-full"
+              dangerouslySetInnerHTML={{ __html: mosaic.svg }}
+            />
+          </div>
+        </div>
+
+        {/* Tile Info */}
+        <div>
+          <h4 className="text-[10px] font-semibold text-surface-500 uppercase tracking-wider mb-2">
+            Details
+          </h4>
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between gap-2">
+              <dt className="text-surface-500">Name</dt>
+              <dd className="font-medium text-surface-900 truncate">
+                {mosaic.name}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-surface-500">Category</dt>
+              <dd className="font-medium text-surface-900 capitalize">
+                {mosaic.category}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-surface-500">Dimensions</dt>
+              <dd className="font-medium text-surface-900">
+                {mosaic.width}×{mosaic.height}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-surface-500">Parts</dt>
+              <dd className="font-medium text-surface-900">{partsCount}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </aside>
+  );
+}
 
 interface MosaicBuilderProps {
   mosaic: Mosaic;
@@ -181,9 +266,9 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
   }, [mosaic.svg]);
 
   return (
-    <div className="flex flex-col h-full min-h-[600px] pb-24">
-      {/* Action Bar */}
-      <div className="flex items-center justify-between gap-4 border-b border-surface-200 bg-white px-4 py-3 sticky top-0 z-20">
+    <div className="flex flex-col min-h-0">
+      {/* Action Bar - Sticky below stepper */}
+      <div className="relative flex items-center justify-between gap-4 border-b border-surface-200 bg-white px-4 py-3 sticky top-[120px] z-[35] shadow-sm flex-shrink-0">
         {/* Left: Back button */}
         <button
           type="button"
@@ -194,8 +279,8 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
           <span>Back</span>
         </button>
 
-        {/* Center: Mosaic name */}
-        <h2 className="font-display text-lg font-semibold text-surface-900">
+        {/* Center: Mosaic name - Absolutely centered */}
+        <h2 className="absolute left-1/2 -translate-x-1/2 font-display text-lg font-semibold text-surface-900">
           {mosaic.name}
         </h2>
 
@@ -221,52 +306,38 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
       </div>
 
       {/* Main content - Two column layout */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Compact Parts Selector */}
-        <aside className="w-64 flex-shrink-0 overflow-y-auto border-r border-surface-200 bg-white p-4 lg:w-72">
-          <CompactPartSelector
-            svg={currentSvg}
-            parts={parts}
-            selectedPartId={selectedPartId}
-            onSelectPart={handleSelectPart}
-          />
+      <div className="flex">
+        {/* Left Sidebar - Parts & Colors (Actions) */}
+        <aside className="w-64 flex-shrink-0 border-r border-surface-200 bg-white lg:w-72">
+          <div className="p-4">
+            {/* Parts Selector */}
+            <CompactPartSelector
+              svg={currentSvg}
+              parts={parts}
+              selectedPartId={selectedPartId}
+              onSelectPart={handleSelectPart}
+            />
 
-          {/* Info panel */}
-          <div className="mt-6 rounded-lg bg-surface-50 border border-surface-200 p-4">
-            <h4 className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3">
-              Tile Info
-            </h4>
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-surface-500">Category</dt>
-                <dd className="font-medium text-surface-900 capitalize">
-                  {mosaic.category}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-surface-500">Dimensions</dt>
-                <dd className="font-medium text-surface-900">
-                  {mosaic.width}×{mosaic.height}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-surface-500">Parts</dt>
-                <dd className="font-medium text-surface-900">{parts.length}</dd>
-              </div>
-            </dl>
+            {/* Color Palette */}
+            <div className="mt-5">
+              <ColorDock
+                selectedColor={selectedColor}
+                onSelectColor={handleSelectColor}
+                recentColors={recentColors}
+                selectedPartId={selectedPartId}
+              />
+            </div>
           </div>
         </aside>
 
-        {/* Main Area - Tile Matrix (Full Focus) */}
-        <main className="flex-1 overflow-y-auto bg-surface-100 p-6 lg:p-8">
-          <div className="mx-auto max-w-3xl">
+        {/* Main Area - Tile Matrix */}
+        <main className="flex-1 bg-surface-100">
+          <div className="p-4 lg:p-6 mx-auto max-w-xl">
             {/* Instructions */}
             {!selectedPartId && (
-              <div className="mb-6 rounded-lg bg-brand-50 border border-brand-200 p-4 text-center">
-                <p className="text-sm text-brand-700">
-                  <span className="font-semibold">Getting started:</span> Select
-                  a part from the sidebar, then pick a color from the palette
-                  below.
+              <div className="mb-4 rounded-lg bg-brand-50 border border-brand-200 p-3 text-center">
+                <p className="text-sm text-brand-700 whitespace-nowrap">
+                  <span className="font-semibold">Getting started:</span> Select a part from the sidebar, then pick a color from the palette.
                 </p>
               </div>
             )}
@@ -280,22 +351,10 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
             />
           </div>
         </main>
+
+        {/* Right Sidebar - Info Panel (Reference, Collapsible) */}
+        <InfoPanel mosaic={mosaic} partsCount={parts.length} />
       </div>
-
-      {/* Floating Preview */}
-      <FloatingPreview
-        svg={currentSvg}
-        mosaicName={mosaic.name}
-        selectedPartId={selectedPartId}
-      />
-
-      {/* Bottom Color Dock - Always visible */}
-      <ColorDock
-        selectedColor={selectedColor}
-        onSelectColor={handleSelectColor}
-        recentColors={recentColors}
-        selectedPartId={selectedPartId}
-      />
     </div>
   );
 }
