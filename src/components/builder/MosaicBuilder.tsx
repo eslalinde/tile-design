@@ -3,8 +3,9 @@ import { cn } from "@/lib/utils";
 import type { Mosaic } from "@/hooks/useMosaics";
 import type { PartColor } from "@/types/mosaic";
 import type { MosaicColor } from "@/data/colors";
-import { PartSelector } from "./PartSelector";
-import { ColorPalette } from "./ColorPalette";
+import { CompactPartSelector } from "./CompactPartSelector";
+import { ColorDock } from "./ColorDock";
+import { FloatingPreview } from "./FloatingPreview";
 import { TileMatrix } from "./TileMatrix";
 import {
   Undo2,
@@ -32,7 +33,6 @@ function initializePartsFromSvg(svg: string): PartColor[] {
     const id = g.getAttribute("id");
     if (!id) return;
 
-    // Get the first shape's fill color
     const firstShape = g.querySelector("path, rect, circle, polygon, ellipse");
     const fill = firstShape?.getAttribute("fill") || "#CCCCCC";
 
@@ -48,20 +48,18 @@ function initializePartsFromSvg(svg: string): PartColor[] {
 // Parse rotation from mosaic metadata
 function parseRotation(mosaic: Mosaic): number[][] | undefined {
   if (!mosaic.rotation) return undefined;
-  
+
   try {
-    // If rotation is already an array, use it
     if (Array.isArray(mosaic.rotation)) {
       return mosaic.rotation as number[][];
     }
-    // If it's a string, try to parse it
     if (typeof mosaic.rotation === "string") {
       return JSON.parse(mosaic.rotation);
     }
   } catch {
     return undefined;
   }
-  
+
   return undefined;
 }
 
@@ -168,7 +166,7 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
         // Add to recent colors
         setRecentColors((prev) => {
           const filtered = prev.filter((c) => c !== color.hex);
-          return [color.hex, ...filtered].slice(0, 8);
+          return [color.hex, ...filtered].slice(0, 6);
         });
       }
     },
@@ -183,9 +181,9 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
   }, [mosaic.svg]);
 
   return (
-    <div className="flex flex-col h-full min-h-[600px]">
+    <div className="flex flex-col h-full min-h-[600px] pb-24">
       {/* Action Bar */}
-      <div className="flex items-center justify-between gap-4 border-b border-surface-200 bg-white px-4 py-3">
+      <div className="flex items-center justify-between gap-4 border-b border-surface-200 bg-white px-4 py-3 sticky top-0 z-20">
         {/* Left: Back button */}
         <button
           type="button"
@@ -193,28 +191,18 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
           className="flex items-center gap-1.5 text-sm font-medium text-surface-600 hover:text-surface-900 transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
-          <span>Back to tiles</span>
+          <span>Back</span>
         </button>
 
         {/* Center: Mosaic name */}
-        <h2 className="font-display text-lg font-semibold text-surface-900 hidden sm:block">
+        <h2 className="font-display text-lg font-semibold text-surface-900">
           {mosaic.name}
         </h2>
 
         {/* Right: Action buttons */}
         <div className="flex items-center gap-2">
-          <ActionButton
-            icon={Undo2}
-            label="Undo"
-            disabled
-            onClick={() => {}}
-          />
-          <ActionButton
-            icon={Redo2}
-            label="Redo"
-            disabled
-            onClick={() => {}}
-          />
+          <ActionButton icon={Undo2} label="Undo" disabled onClick={() => {}} />
+          <ActionButton icon={Redo2} label="Redo" disabled onClick={() => {}} />
           <div className="hidden sm:block w-px h-6 bg-surface-200" />
           <ActionButton
             icon={RotateCcw}
@@ -222,11 +210,7 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
             variant="danger"
             onClick={handleReset}
           />
-          <ActionButton
-            icon={Save}
-            label="Save"
-            onClick={() => {}}
-          />
+          <ActionButton icon={Save} label="Save" onClick={() => {}} />
           <ActionButton
             icon={FileText}
             label="Quote"
@@ -236,100 +220,82 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main content - Two column layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Parts, Colors, Preview */}
-        <aside className="w-72 flex-shrink-0 overflow-y-auto border-r border-surface-200 bg-surface-50 p-4 lg:w-80">
-          <div className="space-y-6">
-            {/* SVG Preview */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-surface-900">
-                Preview
-              </h3>
-              <div
-                className={cn(
-                  "aspect-square rounded-xl border-2 bg-white p-4 shadow-soft",
-                  "transition-all duration-150",
-                  selectedPartId
-                    ? "border-brand-200"
-                    : "border-surface-200"
-                )}
-              >
-                <div
-                  className="h-full w-full"
-                  dangerouslySetInnerHTML={{ __html: currentSvg }}
-                />
+        {/* Left Sidebar - Compact Parts Selector */}
+        <aside className="w-64 flex-shrink-0 overflow-y-auto border-r border-surface-200 bg-white p-4 lg:w-72">
+          <CompactPartSelector
+            svg={currentSvg}
+            parts={parts}
+            selectedPartId={selectedPartId}
+            onSelectPart={handleSelectPart}
+          />
+
+          {/* Info panel */}
+          <div className="mt-6 rounded-lg bg-surface-50 border border-surface-200 p-4">
+            <h4 className="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3">
+              Tile Info
+            </h4>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-surface-500">Category</dt>
+                <dd className="font-medium text-surface-900 capitalize">
+                  {mosaic.category}
+                </dd>
               </div>
-            </div>
-
-            {/* Parts Selector */}
-            <PartSelector
-              svg={currentSvg}
-              parts={parts}
-              selectedPartId={selectedPartId}
-              onSelectPart={handleSelectPart}
-            />
-
-            {/* Color Palette */}
-            <ColorPalette
-              selectedColor={selectedColor}
-              onSelectColor={handleSelectColor}
-              recentColors={recentColors}
-            />
+              <div className="flex justify-between">
+                <dt className="text-surface-500">Dimensions</dt>
+                <dd className="font-medium text-surface-900">
+                  {mosaic.width}×{mosaic.height}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-surface-500">Parts</dt>
+                <dd className="font-medium text-surface-900">{parts.length}</dd>
+              </div>
+            </dl>
           </div>
         </aside>
 
-        {/* Main Area - Tile Matrix */}
+        {/* Main Area - Tile Matrix (Full Focus) */}
         <main className="flex-1 overflow-y-auto bg-surface-100 p-6 lg:p-8">
-          <div className="mx-auto max-w-2xl">
+          <div className="mx-auto max-w-3xl">
             {/* Instructions */}
             {!selectedPartId && (
               <div className="mb-6 rounded-lg bg-brand-50 border border-brand-200 p-4 text-center">
                 <p className="text-sm text-brand-700">
-                  <span className="font-semibold">Tip:</span> Select a part from
-                  the sidebar, then choose a color to customize your mosaic.
+                  <span className="font-semibold">Getting started:</span> Select
+                  a part from the sidebar, then pick a color from the palette
+                  below.
                 </p>
               </div>
             )}
 
-            {/* Matrix */}
+            {/* Matrix - Hero element */}
             <TileMatrix
               svg={currentSvg}
               parts={parts}
               rotation={rotation}
               showBorder={mosaic.category === "border"}
             />
-
-            {/* Info panel */}
-            <div className="mt-6 rounded-lg bg-white border border-surface-200 p-4">
-              <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-                <div>
-                  <dt className="text-surface-500">Tile</dt>
-                  <dd className="font-medium text-surface-900">{mosaic.name}</dd>
-                </div>
-                <div>
-                  <dt className="text-surface-500">Category</dt>
-                  <dd className="font-medium text-surface-900 capitalize">
-                    {mosaic.category}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-surface-500">Dimensions</dt>
-                  <dd className="font-medium text-surface-900">
-                    {mosaic.width}×{mosaic.height} cm
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-surface-500">Parts</dt>
-                  <dd className="font-medium text-surface-900">
-                    {parts.length}
-                  </dd>
-                </div>
-              </dl>
-            </div>
           </div>
         </main>
       </div>
+
+      {/* Floating Preview */}
+      <FloatingPreview
+        svg={currentSvg}
+        mosaicName={mosaic.name}
+        selectedPartId={selectedPartId}
+      />
+
+      {/* Bottom Color Dock - Always visible */}
+      <ColorDock
+        selectedColor={selectedColor}
+        onSelectColor={handleSelectColor}
+        recentColors={recentColors}
+        selectedPartId={selectedPartId}
+      />
     </div>
   );
 }
