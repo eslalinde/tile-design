@@ -473,21 +473,29 @@ export const HexColorsList: MosaicColor[] = [
 * [x] Basic Builder layout
 * [x] Part selection
 * [x] Color changes
-* [ ] Rotation & flip
+* [x] Rotation
 * [ ] Auto-save
 * [x] Undo, Redo, Save
 
-### Phase 3 – User & Storage
+### Phase 3 - Advance Builder
+* [ ] Real rectangular size
+* [ ] Basic Border implementation
+* [ ] Advance border with 3 tiles
+* [ ] Hexagonal tiles
+* [ ] G1 tiles
+* [ ] 
+
+### Phase 4 – User & Storage
 * [ ] Authentication
 * [ ] Saved mosaics
 * [ ] Preview generation
 
-### Phase 4 – Quotation
+### Phase 5 – Quotation
 * [ ] Snapshot export
 * [ ] Email notifications
 * [ ] Minimal backoffice
 
-### Phase 5 – Optimization
+### Phase 6 – Optimization
 * [ ] Performance tuning
 * [ ] UX refinement
 * [ ] Analytics & metrics

@@ -123,7 +123,20 @@ INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, 
 </svg>',
 200, 200, '[[0, 90, 180, 270], [90, 180, 270, 0]]',
 '{"part1": "#96CDE7", "part2": "#EFEFEF", "part3": "#EFEFEF", "part4": "#DE8ABA"}',
-'Barcelona modernist curves', 3);
+'Barcelona modernist curves', 3),
+
+('Barcelona 04', 'barcelona', 'mosaic', 'square',
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#EFEFEF"/>
+  </g>
+  <g id="part2">
+    <path d="M200,0 L200,200 L0,200 Q100,100 200,0 Z" fill="#4B9ED7"/>
+  </g>
+</svg>',
+200, 200, '[[0, 90, 0, 90], [270, 180, 270, 180]]',
+'{"part1": "#EFEFEF", "part2": "#4B9ED7"}',
+'Barcelona quarter circle pattern - forms complete circle when 4 tiles meet', 5);
 
 -- =====================================================
 -- MOROCCO COLLECTION
