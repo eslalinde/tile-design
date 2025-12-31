@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { Mosaic } from "@/hooks/useMosaics";
+import { useHistoryState } from "@/hooks/useHistoryState";
 import type { PartColor } from "@/types/mosaic";
 import type { MosaicColor } from "@/data/colors";
 import { CompactPartSelector } from "./CompactPartSelector";
@@ -197,10 +198,17 @@ function ActionButton({
 }
 
 export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
-  // State
-  const [parts, setParts] = useState<PartColor[]>(() =>
-    initializePartsFromSvg(mosaic.svg)
-  );
+  // State with undo/redo history
+  const {
+    state: parts,
+    set: setParts,
+    undo,
+    redo,
+    reset: resetParts,
+    canUndo,
+    canRedo,
+  } = useHistoryState<PartColor[]>(() => initializePartsFromSvg(mosaic.svg));
+
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [recentColors, setRecentColors] = useState<string[]>([]);
@@ -240,13 +248,12 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
 
       // If a part is selected, apply the color
       if (selectedPartId) {
-        setParts((prev) =>
-          prev.map((part) =>
-            part.partId === selectedPartId
-              ? { ...part, colorHex: color.hex }
-              : part
-          )
-        );
+        setParts((draft) => {
+          const part = draft.find((p) => p.partId === selectedPartId);
+          if (part) {
+            part.colorHex = color.hex;
+          }
+        });
 
         // Add to recent colors
         setRecentColors((prev) => {
@@ -255,15 +262,38 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
         });
       }
     },
-    [selectedPartId]
+    [selectedPartId, setParts]
   );
 
   // Reset colors to original
   const handleReset = useCallback(() => {
-    setParts(initializePartsFromSvg(mosaic.svg));
+    resetParts(initializePartsFromSvg(mosaic.svg));
     setSelectedPartId(null);
     setSelectedColor(null);
-  }, [mosaic.svg]);
+  }, [mosaic.svg, resetParts]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl+Z (Windows/Linux) or Cmd+Z (Mac)
+      const isUndo = (e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey;
+      // Check for Ctrl+Shift+Z or Ctrl+Y (Windows/Linux) or Cmd+Shift+Z (Mac)
+      const isRedo =
+        ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) ||
+        ((e.ctrlKey || e.metaKey) && e.key === "y");
+
+      if (isUndo) {
+        e.preventDefault();
+        undo();
+      } else if (isRedo) {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
 
   return (
     <div className="flex flex-col min-h-0">
@@ -286,8 +316,8 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
 
         {/* Right: Action buttons */}
         <div className="flex items-center gap-2">
-          <ActionButton icon={Undo2} label="Undo" disabled onClick={() => {}} />
-          <ActionButton icon={Redo2} label="Redo" disabled onClick={() => {}} />
+          <ActionButton icon={Undo2} label="Undo" disabled={!canUndo} onClick={undo} />
+          <ActionButton icon={Redo2} label="Redo" disabled={!canRedo} onClick={redo} />
           <div className="hidden sm:block w-px h-6 bg-surface-200" />
           <ActionButton
             icon={RotateCcw}
@@ -336,7 +366,7 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
             {/* Instructions */}
             {!selectedPartId && (
               <div className="mb-4 rounded-lg bg-brand-50 border border-brand-200 p-3 text-center">
-                <p className="text-sm text-brand-700 whitespace-nowrap">
+                <p className="text-sm text-brand-700">
                   <span className="font-semibold">Getting started:</span> Select a part from the sidebar, then pick a color from the palette.
                 </p>
               </div>

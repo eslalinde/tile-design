@@ -181,17 +181,19 @@ Step 1        Step 2        Step 3         Step 4
 ●────────────●────────────●────────────○
 Category     Tile          Design          Save / Quote
 
-┌──────────────────────────────────────────────────────────┐
-│ Undo | Redo | Save | Clean | Quote                       │
-├──────────────┬───────────────────────────────────────────┤
-│ Parts        │                                           │
-│ Colors       │         5x5 MOSAIC MATRIX (LARGE)         │
-│ (Editor)     │         (Primary Focus Area)              │
-│              │                                           │
-│──────────────│                                           │
-│ SVG Preview  │                                           │
-│ (Small)      │                                           │
-└──────────────┴───────────────────────────────────────────┘
+┌────────────────────┬─────────────────────────┬──────────────────┐
+│  PARTS             │                         │ TILE INFO     ▶  │
+│  [■][■][■][■]      │                         │                  │
+│                    │                         │ ┌──────────────┐ │
+│  COLORS → part1    │                         │ │   Original   │ │
+│  Recent: [■][■]    │      Tile Matrix        │ │    [svg]     │ │
+│  [■][■][■][■][■][■]│                         │ └──────────────┘ │
+│  [■][■][■][■][■][■]│                         │                  │
+│  [■][■][■][■][■][■]│                         │ Name: Hex-01     │
+│  ...               │                         │ Category: geo    │
+│                    │                         │ Size: 20×20      │
+│                    │                         │ Parts: 4         │
+└────────────────────┴─────────────────────────┴──────────────────┘
 
 Step 1        Step 2        Step 3         Step 4
 ●────────────●────────────●────────────●
@@ -467,13 +469,13 @@ export const HexColorsList: MosaicColor[] = [
 
 ### Phase 2 – Builder
 * [x] Seed SVG with parts
-* [ ] Stepper UI 
-* [ ] Basic Builder layout
-* [ ] Part selection
-* [ ] Color changes
+* [x] Stepper UI 
+* [x] Basic Builder layout
+* [x] Part selection
+* [x] Color changes
 * [ ] Rotation & flip
 * [ ] Auto-save
-* [ ] Undo, Redo, Save
+* [x] Undo, Redo, Save
 
 ### Phase 3 – User & Storage
 * [ ] Authentication
