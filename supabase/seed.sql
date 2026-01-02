@@ -328,60 +328,42 @@ INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, 
 -- RECTANGLE COLLECTION
 -- =====================================================
 
+-- Basic rectangular tiles with different sizes (solid colors, no patterns)
+-- These are the base tiles for creating brick, stack bond, herringbone, and chevron patterns
+
 INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, default_colors, description, display_order) VALUES
-('Rectangle 01', 'rectangle', 'mosaic', 'rectangle',
+-- 25x5cm rectangular tile (5:1 ratio)
+('Rectangular 25x5cm', 'rectangle', 'mosaic', 'rectangle',
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 50">
+  <g id="part1">
+    <rect width="250" height="50" fill="#BCC2C0"/>
+  </g>
+</svg>',
+250, 50, '[[0, 0], [0, 0]]',
+'{"part1": "#BCC2C0"}',
+'Solid 25x5cm rectangular tile for brick, stack bond, herringbone, and chevron patterns', 1),
+
+-- 20x10cm rectangular tile (2:1 ratio)
+('Rectangular 20x10cm', 'rectangle', 'mosaic', 'rectangle',
 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
   <g id="part1">
     <rect width="200" height="100" fill="#BCC2C0"/>
   </g>
-  <g id="part2">
-    <rect x="10" y="10" width="80" height="80" fill="#5283A4"/>
-  </g>
-  <g id="part3">
-    <rect x="110" y="10" width="80" height="80" fill="#01A8B8"/>
-  </g>
 </svg>',
-200, 100, '[[0, 0], [180, 180]]',
-'{"part1": "#BCC2C0", "part2": "#5283A4", "part3": "#01A8B8"}',
-'Metro-style rectangle tile', 1),
+200, 100, '[[0, 0], [0, 0]]',
+'{"part1": "#BCC2C0"}',
+'Solid 20x10cm rectangular tile for brick, stack bond, herringbone, and chevron patterns', 2),
 
-('Rectangle 02', 'rectangle', 'mosaic', 'rectangle',
-'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+-- 30x10cm rectangular tile (3:1 ratio)
+('Rectangular 30x10cm', 'rectangle', 'mosaic', 'rectangle',
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">
   <g id="part1">
-    <rect width="200" height="100" fill="#EFEFEF"/>
-  </g>
-  <g id="part2">
-    <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="#D8BEAF"/>
-  </g>
-  <g id="part3">
-    <path d="M100,0 L200,0 L200,100 L100,100 Z" fill="#A99790"/>
-  </g>
-  <g id="part4">
-    <ellipse cx="100" cy="50" rx="40" ry="30" fill="#554840"/>
+    <rect width="300" height="100" fill="#BCC2C0"/>
   </g>
 </svg>',
-200, 100, '[[0, 180], [180, 0]]',
-'{"part1": "#EFEFEF", "part2": "#D8BEAF", "part3": "#A99790", "part4": "#554840"}',
-'Art deco rectangle pattern', 2),
-
-('Rectangle 03', 'rectangle', 'mosaic', 'rectangle',
-'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
-  <g id="part1">
-    <rect width="200" height="100" fill="#D3C177"/>
-  </g>
-  <g id="part2">
-    <path d="M0,0 L50,50 L0,100 Z" fill="#7D513B"/>
-  </g>
-  <g id="part3">
-    <path d="M200,0 L150,50 L200,100 Z" fill="#7D513B"/>
-  </g>
-  <g id="part4">
-    <rect x="50" y="20" width="100" height="60" rx="5" fill="#EFEFEF"/>
-  </g>
-</svg>',
-200, 100, '[[0, 0], [180, 180]]',
-'{"part1": "#D3C177", "part2": "#7D513B", "part3": "#7D513B", "part4": "#EFEFEF"}',
-'Arrow-tipped rectangle', 3);
+300, 100, '[[0, 0], [0, 0]]',
+'{"part1": "#BCC2C0"}',
+'Solid 30x10cm rectangular tile for brick, stack bond, herringbone, and chevron patterns', 3),
 
 -- =====================================================
 -- BORDER COLLECTION

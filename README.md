@@ -280,7 +280,7 @@ Undo/redo history - 20-state history with Ctrl+Z/Y support
 ### Pattern Grid
 * **Main grid:** 5 x 5
 * **Visible pattern:** 4 x 4
-* **Remaining cells** represent the border.
+* **Remaining cells** represent the border from 4,0 to 4,4 and 0,4 to 4,4
 * **Borders** are only visible when a border mosaic is selected.
 * **Small spacing** between tiles (3–4 px).
 
@@ -457,6 +457,28 @@ export const HexColorsList: MosaicColor[] = [
 ];
 ```
 
+## Types of tiles
+
+### Box 
+
+### Rectangular
+Basic rectangular tiles with solid colors (no patterns) are available in three sizes:
+- **Rectangular 25x5cm** (5:1 ratio) - viewBox: 250x50
+- **Rectangular 20x10cm** (2:1 ratio) - viewBox: 200x100
+- **Rectangular 30x10cm** (3:1 ratio) - viewBox: 300x100
+
+These solid tiles can be used to create different patterns:
+- **Brick pattern** - offset rows like bricks in a wall
+- **Stack bond** - aligned vertical columns
+- **Herringbone** - diagonal V-shaped pattern
+- **Chevron** - V-shaped pattern with angled cuts
+
+**Implementation Details:**
+- SVG viewBox is proportional to actual tile dimensions
+- MosaicCard component uses dynamic `aspect-ratio` based on width/height
+- Grid layout uses `items-start` to align tiles properly
+- Each tile has a single colorable part (part1) for solid color customization
+
 # 🚧 Construction Phases
 
 ### Phase 1 – Base Infrastructure
@@ -494,6 +516,10 @@ export const HexColorsList: MosaicColor[] = [
 * [ ] Snapshot export
 * [ ] Email notifications
 * [ ] Minimal backoffice
+
+### Phase 6 - Technical Data sheet
+- [ ] Enable technical data sheet
+- [ ] 
 
 ### Phase 6 – Optimization
 * [ ] Performance tuning

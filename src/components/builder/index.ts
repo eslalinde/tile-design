@@ -5,3 +5,4 @@ export { ColorPalette } from "./ColorPalette";
 export { ColorDock } from "./ColorDock";
 export { FloatingPreview } from "./FloatingPreview";
 export { TileMatrix } from "./TileMatrix";
+export { PatternSelector } from "./PatternSelector";

@@ -2,11 +2,13 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { Mosaic } from "@/hooks/useMosaics";
 import { useHistoryState } from "@/hooks/useHistoryState";
-import type { PartColor } from "@/types/mosaic";
+import type { PartColor, RectanglePattern } from "@/types/mosaic";
 import type { MosaicColor } from "@/data/colors";
 import { CompactPartSelector } from "./CompactPartSelector";
 import { ColorDock } from "./ColorDock";
 import { TileMatrix } from "./TileMatrix";
+import { PatternSelector } from "./PatternSelector";
+import { getDefaultPattern } from "@/lib/patterns";
 import {
   Undo2,
   Redo2,
@@ -21,6 +23,11 @@ import {
 // Collapsible Info Panel Component
 function InfoPanel({ mosaic, partsCount }: { mosaic: Mosaic; partsCount: number }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // Calculate aspect ratio for proportional preview
+  const aspectRatio = mosaic.width && mosaic.height 
+    ? mosaic.width / mosaic.height 
+    : 1;
 
   if (isCollapsed) {
     return (
@@ -54,14 +61,15 @@ function InfoPanel({ mosaic, partsCount }: { mosaic: Mosaic; partsCount: number 
       </div>
 
       <div className="p-4">
-        {/* Original SVG Preview */}
+        {/* Original SVG Preview - proportional */}
         <div className="mb-4">
           <h4 className="text-[10px] font-semibold text-surface-500 uppercase tracking-wider mb-2">
             Original
           </h4>
           <div className="rounded-lg bg-surface-50 p-3 border border-surface-200">
             <div
-              className="aspect-square w-full"
+              className="w-full [&>svg]:w-full [&>svg]:h-full"
+              style={{ aspectRatio }}
               dangerouslySetInnerHTML={{ __html: mosaic.svg }}
             />
           </div>
@@ -212,9 +220,18 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [recentColors, setRecentColors] = useState<string[]>([]);
+  
+  // Pattern state for rectangular tiles
+  const [selectedPattern, setSelectedPattern] = useState<RectanglePattern>(
+    () => getDefaultPattern(mosaic.shape) || "brick"
+  );
 
   // Parse rotation from mosaic
   const rotation = useMemo(() => parseRotation(mosaic), [mosaic]);
+  
+  // Check if mosaic is rectangular
+  const isRectangular = mosaic.shape === "rectangle";
+  const tileAspectRatio = mosaic.width && mosaic.height ? mosaic.width / mosaic.height : 1;
 
   // Update SVG with current parts colors
   const currentSvg = useMemo(() => {
@@ -338,8 +355,19 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
       {/* Main content - Two column layout */}
       <div className="flex">
         {/* Left Sidebar - Parts & Colors (Actions) */}
-        <aside className="w-64 flex-shrink-0 border-r border-surface-200 bg-white lg:w-72">
+        <aside className="w-64 flex-shrink-0 border-r border-surface-200 bg-white lg:w-72 overflow-y-auto">
           <div className="p-4">
+            {/* Pattern Selector - Only for rectangular tiles */}
+            {isRectangular && (
+              <div className="mb-5">
+                <PatternSelector
+                  selectedPattern={selectedPattern}
+                  onSelectPattern={setSelectedPattern}
+                  tileAspectRatio={tileAspectRatio}
+                />
+              </div>
+            )}
+            
             {/* Parts Selector */}
             <CompactPartSelector
               svg={currentSvg}
@@ -378,6 +406,9 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
               parts={parts}
               rotation={rotation}
               showBorder={mosaic.category === "border"}
+              tileWidth={mosaic.width}
+              tileHeight={mosaic.height}
+              pattern={isRectangular ? selectedPattern : undefined}
             />
           </div>
         </main>
