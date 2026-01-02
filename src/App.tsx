@@ -4,18 +4,32 @@ import { Stepper, defaultSteps } from "@/components/Stepper";
 import { CategoryNav } from "@/components/CategoryNav";
 import { MosaicGrid } from "@/components/MosaicGrid";
 import { MosaicBuilder } from "@/components/builder";
+import { SavedDesignsGrid } from "@/components/SavedDesignsGrid";
+import { useSavedDesigns, type SavedDesign, type SaveDesignInput } from "@/hooks/useSavedDesigns";
+import { cn } from "@/lib/utils";
 import type { CategoryName } from "@/data/categories";
 import type { Mosaic } from "@/hooks/useMosaics";
-import { Palette, Grid3X3, Sparkles } from "lucide-react";
+import type { PartColor, RectanglePattern } from "@/types/mosaic";
+import { Palette, Grid3X3, Sparkles, FolderHeart } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 type AppStep = 1 | 2 | 3 | 4;
+type Step1Tab = "categories" | "saved";
 
 function App() {
   // Navigation state
   const [currentStep, setCurrentStep] = useState<AppStep>(1);
   const [selectedCategory, setSelectedCategory] = useState<CategoryName | null>(null);
   const [selectedMosaic, setSelectedMosaic] = useState<Mosaic | null>(null);
+  
+  // Step 1 tabs
+  const [activeTab, setActiveTab] = useState<Step1Tab>("categories");
+  
+  // Saved designs
+  const { designs, saveDesign, updateDesign, deleteDesign, isLoading: isLoadingDesigns } = useSavedDesigns();
+  
+  // Currently editing a saved design
+  const [editingDesignId, setEditingDesignId] = useState<string | null>(null);
 
   // Handle category selection
   const handleSelectCategory = useCallback((category: CategoryName) => {
@@ -33,8 +47,80 @@ function App() {
   // Handle back to tiles
   const handleBackToTiles = useCallback(() => {
     setSelectedMosaic(null);
+    setEditingDesignId(null);
     setCurrentStep(2);
   }, []);
+
+  // Handle editing a saved design
+  const handleEditSavedDesign = useCallback((design: SavedDesign) => {
+    // Create a Mosaic-like object from the saved design to pass to MosaicBuilder
+    const mosaicFromDesign: Mosaic = {
+      id: design.mosaicId,
+      name: design.mosaicName,
+      category: design.category,
+      shape: design.shape,
+      width: design.width,
+      height: design.height,
+      svg: design.svg,
+      rotation: null,
+      is_active: true,
+      display_order: 0,
+      created_at: design.createdAt,
+      updated_at: design.updatedAt,
+      default_colors: null,
+      description: null,
+      svg_version: null,
+      type: "mosaic",
+    };
+    
+    setSelectedMosaic(mosaicFromDesign);
+    setSelectedCategory(design.category);
+    setEditingDesignId(design.id);
+    setCurrentStep(3);
+  }, []);
+
+  // Handle saving design from builder
+  const handleSaveDesign = useCallback((
+    mosaic: Mosaic,
+    parts: PartColor[],
+    currentSvg: string,
+    pattern?: RectanglePattern
+  ) => {
+    const designInput: SaveDesignInput = {
+      mosaicId: mosaic.id,
+      mosaicName: mosaic.name,
+      category: mosaic.category as CategoryName,
+      shape: mosaic.shape,
+      width: mosaic.width,
+      height: mosaic.height,
+      parts,
+      svg: currentSvg,
+      pattern,
+    };
+
+    if (editingDesignId) {
+      // Update existing design
+      updateDesign(editingDesignId, designInput);
+    } else {
+      // Save as new design
+      const newDesign = saveDesign(designInput);
+      setEditingDesignId(newDesign.id);
+    }
+  }, [editingDesignId, saveDesign, updateDesign]);
+
+  // Get initial parts for MosaicBuilder when editing a saved design
+  const getInitialParts = useCallback((): PartColor[] | undefined => {
+    if (!editingDesignId) return undefined;
+    const design = designs.find(d => d.id === editingDesignId);
+    return design?.parts;
+  }, [editingDesignId, designs]);
+
+  // Get initial pattern for MosaicBuilder when editing a saved design
+  const getInitialPattern = useCallback((): RectanglePattern | undefined => {
+    if (!editingDesignId) return undefined;
+    const design = designs.find(d => d.id === editingDesignId);
+    return design?.pattern;
+  }, [editingDesignId, designs]);
 
   // Handle step navigation
   const handleStepClick = useCallback(
@@ -43,9 +129,11 @@ function App() {
         setCurrentStep(1);
         setSelectedCategory(null);
         setSelectedMosaic(null);
+        setEditingDesignId(null);
       } else if (stepId === 2 && selectedCategory) {
         setCurrentStep(2);
         setSelectedMosaic(null);
+        setEditingDesignId(null);
       } else if (stepId === 3 && selectedMosaic) {
         setCurrentStep(3);
       }
@@ -149,14 +237,89 @@ function App() {
                     Step 1: Choose a Category
                   </h2>
                   <p className="mt-2 text-surface-600">
-                    Select the type of mosaic you want to design.
+                    Select the type of mosaic you want to design, or continue with a saved design.
                   </p>
                 </div>
 
-                <CategoryNav
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={handleSelectCategory}
-                />
+                {/* Tabs */}
+                <div className="flex justify-center mb-8">
+                  <div className="inline-flex rounded-xl bg-surface-100 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("categories")}
+                      className={cn(
+                        "flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                        activeTab === "categories"
+                          ? "bg-white text-surface-900 shadow-soft"
+                          : "text-surface-600 hover:text-surface-900"
+                      )}
+                    >
+                      <Grid3X3 className="h-4 w-4" />
+                      <span>Categories</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("saved")}
+                      className={cn(
+                        "flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                        activeTab === "saved"
+                          ? "bg-white text-surface-900 shadow-soft"
+                          : "text-surface-600 hover:text-surface-900"
+                      )}
+                    >
+                      <FolderHeart className="h-4 w-4" />
+                      <span>My Designs</span>
+                      {designs.length > 0 && (
+                        <span className={cn(
+                          "ml-1 px-2 py-0.5 text-xs font-semibold rounded-full",
+                          activeTab === "saved"
+                            ? "bg-brand-100 text-brand-700"
+                            : "bg-surface-200 text-surface-600"
+                        )}>
+                          {designs.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tab Content */}
+                <AnimatePresence mode="wait">
+                  {activeTab === "categories" && (
+                    <motion.div
+                      key="tab-categories"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <CategoryNav
+                        selectedCategory={selectedCategory}
+                        onSelectCategory={handleSelectCategory}
+                      />
+                    </motion.div>
+                  )}
+
+                  {activeTab === "saved" && (
+                    <motion.div
+                      key="tab-saved"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div className="rounded-2xl border border-surface-200 bg-white p-6 shadow-card">
+                        <SavedDesignsGrid
+                          designs={designs}
+                          onEditDesign={handleEditSavedDesign}
+                          onDeleteDesign={deleteDesign}
+                          onSwitchToCategories={() => setActiveTab("categories")}
+                          isLoading={isLoadingDesigns}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </section>
           </motion.div>
@@ -218,7 +381,14 @@ function App() {
             transition={{ duration: 0.3 }}
             className="flex-1"
           >
-            <MosaicBuilder mosaic={selectedMosaic} onBack={handleBackToTiles} />
+            <MosaicBuilder
+              mosaic={selectedMosaic}
+              onBack={handleBackToTiles}
+              onSave={handleSaveDesign}
+              initialParts={getInitialParts()}
+              initialPattern={getInitialPattern()}
+              isEditingExisting={!!editingDesignId}
+            />
           </motion.div>
         )}
 

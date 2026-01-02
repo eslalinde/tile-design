@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
+  Check,
 } from "lucide-react";
 
 // Collapsible Info Panel Component
@@ -113,6 +114,15 @@ function InfoPanel({ mosaic, partsCount }: { mosaic: Mosaic; partsCount: number 
 interface MosaicBuilderProps {
   mosaic: Mosaic;
   onBack: () => void;
+  onSave?: (
+    mosaic: Mosaic,
+    parts: PartColor[],
+    currentSvg: string,
+    pattern?: RectanglePattern
+  ) => void;
+  initialParts?: PartColor[];
+  initialPattern?: RectanglePattern;
+  isEditingExisting?: boolean;
 }
 
 // Initialize parts from SVG (extract default colors)
@@ -205,7 +215,14 @@ function ActionButton({
   );
 }
 
-export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
+export function MosaicBuilder({
+  mosaic,
+  onBack,
+  onSave,
+  initialParts,
+  initialPattern,
+  isEditingExisting = false,
+}: MosaicBuilderProps) {
   // State with undo/redo history
   const {
     state: parts,
@@ -215,15 +232,20 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
     reset: resetParts,
     canUndo,
     canRedo,
-  } = useHistoryState<PartColor[]>(() => initializePartsFromSvg(mosaic.svg));
+  } = useHistoryState<PartColor[]>(() => 
+    initialParts || initializePartsFromSvg(mosaic.svg)
+  );
 
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [recentColors, setRecentColors] = useState<string[]>([]);
   
+  // Save feedback state
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  
   // Pattern state for rectangular tiles
   const [selectedPattern, setSelectedPattern] = useState<RectanglePattern>(
-    () => getDefaultPattern(mosaic.shape) || "brick"
+    () => initialPattern || getDefaultPattern(mosaic.shape) || "brick"
   );
 
   // Parse rotation from mosaic
@@ -289,7 +311,30 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
     setSelectedColor(null);
   }, [mosaic.svg, resetParts]);
 
-  // Keyboard shortcuts for undo/redo
+  // Handle save design
+  const handleSave = useCallback(() => {
+    if (!onSave) return;
+    
+    setSaveStatus("saving");
+    
+    // Call the save function
+    onSave(
+      mosaic,
+      parts,
+      currentSvg,
+      isRectangular ? selectedPattern : undefined
+    );
+    
+    // Show saved feedback
+    setSaveStatus("saved");
+    
+    // Reset after 2 seconds
+    setTimeout(() => {
+      setSaveStatus("idle");
+    }, 2000);
+  }, [onSave, mosaic, parts, currentSvg, isRectangular, selectedPattern]);
+
+  // Keyboard shortcuts for undo/redo/save
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check for Ctrl+Z (Windows/Linux) or Cmd+Z (Mac)
@@ -298,6 +343,8 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
       const isRedo =
         ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) ||
         ((e.ctrlKey || e.metaKey) && e.key === "y");
+      // Check for Ctrl+S (Windows/Linux) or Cmd+S (Mac)
+      const isSave = (e.ctrlKey || e.metaKey) && e.key === "s";
 
       if (isUndo) {
         e.preventDefault();
@@ -305,12 +352,15 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
       } else if (isRedo) {
         e.preventDefault();
         redo();
+      } else if (isSave) {
+        e.preventDefault();
+        handleSave();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, handleSave]);
 
   return (
     <div className="flex flex-col min-h-0">
@@ -342,7 +392,19 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
             variant="danger"
             onClick={handleReset}
           />
-          <ActionButton icon={Save} label="Save" onClick={() => {}} />
+          <ActionButton
+            icon={saveStatus === "saved" ? Check : Save}
+            label={
+              saveStatus === "saving"
+                ? "Saving..."
+                : saveStatus === "saved"
+                ? "Saved"
+                : "Save"
+            }
+            onClick={handleSave}
+            disabled={saveStatus === "saving"}
+            variant={saveStatus === "saved" ? "primary" : "default"}
+          />
           <ActionButton
             icon={FileText}
             label="Quote"

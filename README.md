@@ -500,12 +500,12 @@ These solid tiles can be used to create different patterns:
 * [x] Undo, Redo, Save
 
 ### Phase 3 - Advance Builder
-* [ ] Real rectangular size
+* [x] Real rectangular size
 * [ ] Basic Border implementation
 * [ ] Advance border with 3 tiles
-* [ ] Hexagonal tiles
-* [ ] G1 tiles
-* [ ] 
+* [x] Hexagonal tiles
+* [x] G1 tiles
+* [ ] Image tiles
 
 ### Phase 4 – User & Storage
 * [ ] Authentication
