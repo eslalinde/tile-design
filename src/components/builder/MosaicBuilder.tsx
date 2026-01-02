@@ -409,6 +409,7 @@ export function MosaicBuilder({ mosaic, onBack }: MosaicBuilderProps) {
               tileWidth={mosaic.width}
               tileHeight={mosaic.height}
               pattern={isRectangular ? selectedPattern : undefined}
+              shape={mosaic.shape}
             />
           </div>
         </main>

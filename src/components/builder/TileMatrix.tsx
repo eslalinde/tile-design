@@ -12,6 +12,8 @@ interface TileMatrixProps {
   tileWidth?: number;
   tileHeight?: number;
   pattern?: RectanglePattern;
+  // Tile shape for different rendering modes
+  shape?: "square" | "hexagon" | "rectangle" | "g1";
 }
 
 // Default rotation pattern for a 4x4 grid (5x5 with border)
@@ -159,6 +161,137 @@ function SquareMatrix({
         <div className="flex items-center gap-1.5">
           <div className="h-3 w-3 rounded-sm bg-surface-100 border border-dashed border-surface-300" />
           <span>Border area</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Hexagonal honeycomb matrix using SVG with foreignObject
+function HexagonalMatrix({
+  coloredSvg,
+}: {
+  coloredSvg: string;
+}) {
+  // Hexagon dimensions from the SVG viewBox (200x173)
+  const hexWidth = 200;
+  const hexHeight = 173;
+  
+  // For flat-top hexagon with viewBox 200x173:
+  // Points: 50,0 -> 150,0 -> 200,86.5 -> 150,173 -> 50,173 -> 0,86.5
+  // Side length = 100 (the top horizontal edge)
+  const sideLength = 100;
+  
+  // Spacing calculation:
+  // - hex1 covers x = [0, hexWidth] = [0, 200]
+  // - For gap of 'sideLength' between hexagons: hex2 starts at x = hexWidth + gap
+  // - horizSpacing = hexWidth + gap
+  const gap = sideLength; // Gap between hexagons = one side length (100)
+  const horizSpacing = hexWidth + gap; // 200 + 100 = 300
+  
+  // Vertical spacing: top edge of row 2 reaches the middle of row 1
+  // This creates the honeycomb interlock pattern
+  const vertSpacing = hexHeight / 2; // 173 / 2 = 86.5
+  
+  // Odd rows offset by half a hexagon width + half gap
+  const oddRowOffset = (hexWidth + gap) / 2; // 150
+  
+  // Grid configuration
+  const cols = 4;
+  const rows = 7;
+  
+  // Calculate viewBox size to fit all hexagons
+  const viewBoxWidth = (cols - 1) * horizSpacing + hexWidth + oddRowOffset;
+  const viewBoxHeight = (rows - 1) * vertSpacing + hexHeight;
+  
+  // Generate hexagon positions
+  const hexagons = useMemo(() => {
+    const result: { x: number; y: number; row: number; col: number; id: string }[] = [];
+    for (let r = 0; r < rows; r++) {
+      const isOddRow = r % 2 === 1;
+      const rowOffset = isOddRow ? oddRowOffset : 0;
+      for (let c = 0; c < cols; c++) {
+        result.push({
+          x: c * horizSpacing + rowOffset,
+          y: r * vertSpacing,
+          row: r,
+          col: c,
+          id: `hex-${r}-${c}`,
+        });
+      }
+    }
+    return result;
+  }, []);
+  
+  // Hexagon path for the flat-top hexagon (matching viewBox 200x173)
+  const hexPath = "M50,0 L150,0 L200,86.5 L150,173 L50,173 L0,86.5 Z";
+  
+  return (
+    <>
+      <div className="p-4 bg-surface-100 rounded-xl">
+        <div className="overflow-hidden rounded-lg">
+          <svg
+            viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+            className="w-full h-auto"
+            preserveAspectRatio="xMidYMid meet"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Background */}
+            <rect x={0} y={0} width={viewBoxWidth} height={viewBoxHeight} fill="#f1f5f9" rx={8} />
+            
+            {/* Render each hexagon */}
+            {hexagons.map((hex) => (
+              <g key={hex.id}>
+                {/* White background for hexagon */}
+                <path
+                  d={hexPath}
+                  transform={`translate(${hex.x}, ${hex.y})`}
+                  fill="white"
+                />
+                
+                {/* Mosaic content using foreignObject */}
+                <foreignObject
+                  x={hex.x}
+                  y={hex.y}
+                  width={hexWidth}
+                  height={hexHeight}
+                >
+                  <div
+                    style={{ 
+                      width: hexWidth, 
+                      height: hexHeight,
+                      clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+                    }}
+                    className="[&>svg]:w-full [&>svg]:h-full"
+                    dangerouslySetInnerHTML={{ __html: coloredSvg }}
+                  />
+                </foreignObject>
+                
+                {/* Hexagon border on top */}
+                <path
+                  d={hexPath}
+                  transform={`translate(${hex.x}, ${hex.y})`}
+                  fill="none"
+                  stroke="#cbd5e1"
+                  strokeWidth={2}
+                />
+              </g>
+            ))}
+          </svg>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-3 flex items-center justify-center gap-4 text-xs text-surface-500">
+        <div className="flex items-center gap-1.5">
+          <svg viewBox="0 0 20 17.3" className="h-4 w-4">
+            <path d="M5,0 L15,0 L20,8.65 L15,17.3 L5,17.3 L0,8.65 Z" fill="white" stroke="#94a3b8" strokeWidth={1} />
+          </svg>
+          <span>Hexagonal tile</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium">Honeycomb</span>
+          <span>pattern</span>
         </div>
       </div>
     </>
@@ -403,30 +536,45 @@ export function TileMatrix({
   tileWidth,
   tileHeight,
   pattern,
+  shape = "square",
 }: TileMatrixProps) {
   // Apply colors to SVG
   const coloredSvg = useMemo(() => applyColorsToSvg(svg, parts), [svg, parts]);
 
   // Calculate aspect ratio for rectangular tiles
   const aspectRatio = tileWidth && tileHeight ? tileWidth / tileHeight : 1;
-  const isRectangular = pattern && tileWidth && tileHeight && aspectRatio !== 1;
+  const isRectangular = shape === "rectangle" && pattern && tileWidth && tileHeight && aspectRatio !== 1;
+  const isHexagonal = shape === "hexagon";
 
-  return (
-    <div className={cn("w-full", className)}>
-      {isRectangular ? (
+  // Determine which matrix to render based on shape
+  const renderMatrix = () => {
+    if (isHexagonal) {
+      return <HexagonalMatrix coloredSvg={coloredSvg} />;
+    }
+    
+    if (isRectangular) {
+      return (
         <RectangularMatrix
           coloredSvg={coloredSvg}
-          pattern={pattern}
+          pattern={pattern!}
           aspectRatio={aspectRatio}
           tileColor={parts[0]?.colorHex ?? "#94a3b8"}
         />
-      ) : (
-        <SquareMatrix
-          coloredSvg={coloredSvg}
-          rotation={rotation}
-          showBorder={showBorder}
-        />
-      )}
+      );
+    }
+    
+    return (
+      <SquareMatrix
+        coloredSvg={coloredSvg}
+        rotation={rotation}
+        showBorder={showBorder}
+      />
+    );
+  };
+
+  return (
+    <div className={cn("w-full", className)}>
+      {renderMatrix()}
     </div>
   );
 }
