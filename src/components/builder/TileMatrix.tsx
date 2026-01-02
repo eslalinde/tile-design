@@ -170,8 +170,10 @@ function SquareMatrix({
 // Hexagonal honeycomb matrix using SVG with foreignObject
 function HexagonalMatrix({
   coloredSvg,
+  rotation,
 }: {
   coloredSvg: string;
+  rotation?: number[][]; // Rotation matrix for each hexagon (in degrees, typically 0, 60, 120, 180, 240, 300)
 }) {
   // Hexagon dimensions from the SVG viewBox (200x173)
   const hexWidth = 200;
@@ -204,9 +206,25 @@ function HexagonalMatrix({
   const viewBoxWidth = (cols - 1) * horizSpacing + hexWidth + oddRowOffset;
   const viewBoxHeight = (rows - 1) * vertSpacing + hexHeight;
   
+  // Get rotation for a specific hexagon
+  // Rotation is defined per row: rotation[rowIndex][colIndex]
+  // First 3 rows are configured, then pattern repeats for rows 3-5, 6-8, etc.
+  const getRotation = (row: number, col: number): number => {
+    if (!rotation || rotation.length === 0) return 0;
+    
+    // Map row to one of the first 3 configured rows (0, 1, 2 -> repeat)
+    const configRow = row % rotation.length;
+    const rowConfig = rotation[configRow];
+    
+    if (!rowConfig || rowConfig.length === 0) return 0;
+    
+    // Get rotation for this column in the row (wrap if more columns than config)
+    return rowConfig[col % rowConfig.length] || 0;
+  };
+
   // Generate hexagon positions
   const hexagons = useMemo(() => {
-    const result: { x: number; y: number; row: number; col: number; id: string }[] = [];
+    const result: { x: number; y: number; row: number; col: number; id: string; rot: number }[] = [];
     for (let r = 0; r < rows; r++) {
       const isOddRow = r % 2 === 1;
       const rowOffset = isOddRow ? oddRowOffset : 0;
@@ -217,11 +235,12 @@ function HexagonalMatrix({
           row: r,
           col: c,
           id: `hex-${r}-${c}`,
+          rot: getRotation(r, c),
         });
       }
     }
     return result;
-  }, []);
+  }, [rotation]);
   
   // Hexagon path for the flat-top hexagon (matching viewBox 200x173)
   const hexPath = "M50,0 L150,0 L200,86.5 L150,173 L50,173 L0,86.5 Z";
@@ -261,6 +280,8 @@ function HexagonalMatrix({
                       width: hexWidth, 
                       height: hexHeight,
                       clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+                      transform: hex.rot ? `rotate(${hex.rot}deg)` : undefined,
+                      transformOrigin: 'center center',
                     }}
                     className="[&>svg]:w-full [&>svg]:h-full"
                     dangerouslySetInnerHTML={{ __html: coloredSvg }}
@@ -549,7 +570,7 @@ export function TileMatrix({
   // Determine which matrix to render based on shape
   const renderMatrix = () => {
     if (isHexagonal) {
-      return <HexagonalMatrix coloredSvg={coloredSvg} />;
+      return <HexagonalMatrix coloredSvg={coloredSvg} rotation={rotation} />;
     }
     
     if (isRectangular) {

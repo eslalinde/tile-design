@@ -285,7 +285,7 @@ INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, 
     <polygon points="90,50 110,50 125,86.5 110,123 90,123 75,86.5" fill="#EFEFEF"/>
   </g>
 </svg>',
-200, 173, '[[0, 60, 120, 180, 240, 300]]',
+200, 173, '[[0,0,0,0],[0,0,0,0],[0,0,0,0]]',
 '{"part1": "#DADECF", "part2": "#01A8B8", "part3": "#EFEFEF"}',
 'Classic hexagonal tile with concentric layers', 1),
 
@@ -304,7 +304,7 @@ INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, 
     <circle cx="100" cy="86.5" r="18" fill="#C27547"/>
   </g>
 </svg>',
-200, 173, '[[0, 60, 120, 180, 240, 300]]',
+200, 173, '[[0,0,0,0],[0,0,0,0],[0,0,0,0]]',
 '{"part1": "#D4A57A", "part2": "#44494D", "part3": "#EFEFEF", "part4": "#C27547"}',
 'Hexagonal flower pattern', 2),
 
@@ -320,9 +320,33 @@ INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, 
     <circle cx="100" cy="86.5" r="25" fill="#EFEFEF"/>
   </g>
 </svg>',
-200, 173, '[[0, 60, 120, 180, 240, 300]]',
+200, 173, '[[0,0,0,0],[0,0,0,0],[0,0,0,0]]',
 '{"part1": "#9AC4B0", "part2": "#416969", "part3": "#EFEFEF"}',
-'Hexagonal pinwheel design', 3);
+'Hexagonal pinwheel design', 3),
+
+('Hexagonal 04', 'hexagonal', 'mosaic', 'hexagon',
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 173">
+  <g id="part1">
+    <polygon points="50,0 150,0 200,86.5 0,86.5" fill="#5C5C5C"/>
+  </g>
+  <g id="part2">
+    <polygon points="0,86.5 200,86.5 150,173 50,173" fill="#8FB4C9"/>
+  </g>
+  <g id="part3">
+    <line x1="200" y1="86.5" x2="50" y2="0" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="200" y1="86.5" x2="80" y2="0" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="200" y1="86.5" x2="110" y2="0" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="200" y1="86.5" x2="140" y2="0" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="200" y1="86.5" x2="50" y2="173" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="200" y1="86.5" x2="80" y2="173" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="200" y1="86.5" x2="110" y2="173" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="200" y1="86.5" x2="140" y2="173" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="200" y1="86.5" x2="0" y2="86.5" stroke="#FFFFFF" stroke-width="3"/>
+  </g>
+</svg>',
+200, 173, '[[60, 60, 60, 60], [180, 180, 180, 180], [300, 300, 300, 300]]',
+'{"part1": "#5C5C5C", "part2": "#8FB4C9", "part3": "#FFFFFF"}',
+'Hexagonal fan rays design', 4);
 
 -- =====================================================
 -- RECTANGLE COLLECTION
@@ -363,7 +387,7 @@ INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, 
 </svg>',
 300, 100, '[[0, 0], [0, 0]]',
 '{"part1": "#BCC2C0"}',
-'Solid 30x10cm rectangular tile for brick, stack bond, herringbone, and chevron patterns', 3),
+'Solid 30x10cm rectangular tile for brick, stack bond, herringbone, and chevron patterns', 3);
 
 -- =====================================================
 -- BORDER COLLECTION
