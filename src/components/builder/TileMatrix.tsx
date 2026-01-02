@@ -319,6 +319,151 @@ function HexagonalMatrix({
   );
 }
 
+// G1 (Water Drop / Fish Scale) pattern matrix
+function G1Matrix({
+  coloredSvg,
+  rotation,
+}: {
+  coloredSvg: string;
+  rotation?: number[][];
+}) {
+  // G1 tile dimensions based on the SVG path (approximately 200x200 viewBox)
+  const tileWidth = 200;
+  const tileHeight = 200;
+  
+  // The fish scale pattern tessellates with:
+  // - Offset rows (odd rows shifted by half tile width)
+  // - Overlapping tiles (each row overlaps the previous)
+  const horizSpacing = tileWidth; // Full width spacing
+  const vertSpacing = tileHeight * 0.5; // 50% overlap vertically
+  const oddRowOffset = tileWidth / 2; // Half tile offset for odd rows
+  
+  // Grid configuration
+  const cols = 5;
+  const rows = 8;
+  
+  // Calculate viewBox size to fit all tiles
+  const viewBoxWidth = (cols - 1) * horizSpacing + tileWidth + oddRowOffset;
+  const viewBoxHeight = (rows - 1) * vertSpacing + tileHeight;
+  
+  // Get rotation for a specific tile
+  const getRotation = (row: number, col: number): number => {
+    if (!rotation || rotation.length === 0) return 0;
+    const configRow = row % rotation.length;
+    const rowConfig = rotation[configRow];
+    if (!rowConfig || rowConfig.length === 0) return 0;
+    return rowConfig[col % rowConfig.length] || 0;
+  };
+  
+  // G1 path - water drop / fish scale shape
+  const g1Path = "m 199.83512,96.616655 c -53.99305,0 -97.92227,-42.779053 -99.68404,-96.46120487 h -0.10364 c -1.347232,0 -2.590831,0 -3.834431,0.10363345 C 94.451246,52.593994 52.389262,94.641846 0.15798792,96.610884 c 0,1.139968 0.016323,2.307282 0.016323,3.343615 0,55.133021 44.74012308,99.799051 99.87313908,99.799051 55.13302,0 99.98706,-44.66635 99.79905,-99.799051 z";
+  
+  // Generate tile positions
+  const tiles = useMemo(() => {
+    const result: { x: number; y: number; row: number; col: number; id: string; rot: number }[] = [];
+    for (let r = 0; r < rows; r++) {
+      const isOddRow = r % 2 === 1;
+      const rowOffset = isOddRow ? oddRowOffset : 0;
+      for (let c = 0; c < cols; c++) {
+        result.push({
+          x: c * horizSpacing + rowOffset,
+          y: r * vertSpacing,
+          row: r,
+          col: c,
+          id: `g1-${r}-${c}`,
+          rot: getRotation(r, c),
+        });
+      }
+    }
+    return result;
+  }, [rotation]);
+  
+  return (
+    <>
+      <div className="p-4 bg-surface-100 rounded-xl">
+        <div className="overflow-hidden rounded-lg">
+          <svg
+            viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+            className="w-full h-auto"
+            preserveAspectRatio="xMidYMid meet"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Background */}
+            <rect x={0} y={0} width={viewBoxWidth} height={viewBoxHeight} fill="#f1f5f9" rx={8} />
+            
+            {/* Define clip path for G1 shape */}
+            <defs>
+              <clipPath id="g1-clip">
+                <path d={g1Path} />
+              </clipPath>
+            </defs>
+            
+            {/* Render each G1 tile */}
+            {tiles.map((tile) => (
+              <g key={tile.id}>
+                {/* White background for tile */}
+                <path
+                  d={g1Path}
+                  transform={`translate(${tile.x}, ${tile.y})`}
+                  fill="white"
+                />
+                
+                {/* Mosaic content using foreignObject */}
+                <foreignObject
+                  x={tile.x}
+                  y={tile.y}
+                  width={tileWidth}
+                  height={tileHeight}
+                >
+                  <div
+                    style={{
+                      width: tileWidth,
+                      height: tileHeight,
+                      clipPath: `path('${g1Path}')`,
+                      transform: tile.rot ? `rotate(${tile.rot}deg)` : undefined,
+                      transformOrigin: 'center center',
+                    }}
+                    className="[&>svg]:w-full [&>svg]:h-full"
+                    dangerouslySetInnerHTML={{ __html: coloredSvg }}
+                  />
+                </foreignObject>
+                
+                {/* Tile border on top */}
+                <path
+                  d={g1Path}
+                  transform={`translate(${tile.x}, ${tile.y})`}
+                  fill="none"
+                  stroke="#cbd5e1"
+                  strokeWidth={2}
+                />
+              </g>
+            ))}
+          </svg>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-3 flex items-center justify-center gap-4 text-xs text-surface-500">
+        <div className="flex items-center gap-1.5">
+          <svg viewBox="0 0 20 20" className="h-4 w-4">
+            <path 
+              d="m 19.983512,9.6616655 c -5.399305,0 -9.792227,-4.2779053 -9.968404,-9.6461205 h -0.010364 c -0.1347232,0 -0.2590831,0 -0.3834431,0.0103634 C 9.4451246,5.2593994 5.2389262,9.4641846 0.015798792,9.6610884 c 0,0.1139968 0.001632,0.2307282 0.001632,0.3343616 0,5.5133021 4.474012308,9.9799051 9.987313908,9.9799051 5.51330,0 9.99871,-4.46664 9.97991,-9.9799051 z"
+              fill="white" 
+              stroke="#94a3b8" 
+              strokeWidth={0.5} 
+            />
+          </svg>
+          <span>G1 tile (Fish Scale)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium">120×120mm</span>
+          <span>pattern</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // Rectangular pattern matrix
 function RectangularMatrix({
   coloredSvg,
@@ -566,9 +711,14 @@ export function TileMatrix({
   const aspectRatio = tileWidth && tileHeight ? tileWidth / tileHeight : 1;
   const isRectangular = shape === "rectangle" && pattern && tileWidth && tileHeight && aspectRatio !== 1;
   const isHexagonal = shape === "hexagon";
+  const isG1 = shape === "g1";
 
   // Determine which matrix to render based on shape
   const renderMatrix = () => {
+    if (isG1) {
+      return <G1Matrix coloredSvg={coloredSvg} rotation={rotation} />;
+    }
+    
     if (isHexagonal) {
       return <HexagonalMatrix coloredSvg={coloredSvg} rotation={rotation} />;
     }

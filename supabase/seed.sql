@@ -450,72 +450,21 @@ INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, 
 'Striped border with columns', 3);
 
 -- =====================================================
--- G1 COLLECTION (Special Geometric)
+-- G1 COLLECTION (Water Drop / Fish Scale / Escama)
 -- =====================================================
+-- G1 tiles are 120mm x 120mm (4.7" x 4.7") fish scale shaped tiles
+-- that tessellate in a beautiful overlapping pattern
 
 INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, default_colors, description, display_order) VALUES
-('G1 01', 'g1', 'mosaic', 'g1',
+('G1 Superior', 'g1', 'mosaic', 'g1',
 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <g id="part1">
-    <rect width="200" height="200" fill="#EFEFEF"/>
-  </g>
-  <g id="part2">
-    <path d="M0,0 L200,0 L200,200 Z" fill="#818890"/>
-  </g>
-  <g id="part3">
-    <path d="M0,0 L0,200 L200,200 Z" fill="#469AA4"/>
-  </g>
-  <g id="part4">
-    <circle cx="100" cy="100" r="50" fill="#D4C6C4"/>
-  </g>
-  <g id="part5">
-    <circle cx="100" cy="100" r="25" fill="#44494D"/>
+    <path d="m 199.83512,96.616655 c -53.99305,0 -97.92227,-42.779053 -99.68404,-96.46120487 h -0.10364 c -1.347232,0 -2.590831,0 -3.834431,0.10363345 C 94.451246,52.593994 52.389262,94.641846 0.15798792,96.610884 c 0,1.139968 0.016323,2.307282 0.016323,3.343615 0,55.133021 44.74012308,99.799051 99.87313908,99.799051 55.13302,0 99.98706,-44.66635 99.79905,-99.799051 z" fill="#D4C6C4"/>
   </g>
 </svg>',
-200, 200, '[[0, 90, 180, 270], [270, 0, 90, 180]]',
-'{"part1": "#EFEFEF", "part2": "#818890", "part3": "#469AA4", "part4": "#D4C6C4", "part5": "#44494D"}',
-'G1 diagonal split with circles', 1),
-
-('G1 02', 'g1', 'mosaic', 'g1',
-'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <g id="part1">
-    <rect width="200" height="200" fill="#D3D2BC"/>
-  </g>
-  <g id="part2">
-    <path d="M100,0 L200,100 L100,200 L0,100 Z" fill="#AE6245"/>
-  </g>
-  <g id="part3">
-    <path d="M100,30 L170,100 L100,170 L30,100 Z" fill="#EFEFEF"/>
-  </g>
-  <g id="part4">
-    <path d="M100,60 L140,100 L100,140 L60,100 Z" fill="#01A8B8"/>
-  </g>
-</svg>',
-200, 200, '[[0, 0, 0, 0], [0, 0, 0, 0]]',
-'{"part1": "#D3D2BC", "part2": "#AE6245", "part3": "#EFEFEF", "part4": "#01A8B8"}',
-'G1 nested diamond pattern', 2),
-
-('G1 03', 'g1', 'mosaic', 'g1',
-'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-  <g id="part1">
-    <rect width="200" height="200" fill="#84CCDD"/>
-  </g>
-  <g id="part2">
-    <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="#EFEFEF"/>
-  </g>
-  <g id="part3">
-    <path d="M100,100 L200,100 L200,200 L100,200 Z" fill="#EFEFEF"/>
-  </g>
-  <g id="part4">
-    <path d="M50,50 L150,50 L150,150 L50,150 Z" fill="#C68871" transform="rotate(45, 100, 100)"/>
-  </g>
-  <g id="part5">
-    <circle cx="100" cy="100" r="20" fill="#2E3236"/>
-  </g>
-</svg>',
-200, 200, '[[0, 90, 180, 270], [90, 180, 270, 0]]',
-'{"part1": "#84CCDD", "part2": "#EFEFEF", "part3": "#EFEFEF", "part4": "#C68871", "part5": "#2E3236"}',
-'G1 rotated square overlay', 3);
+120, 120, '[[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]',
+'{"part1": "#D4C6C4"}',
+'G1 Superior - Classic fish scale tile 120x120mm (solid)', 1);
 
 -- Log seed completion
 DO $$
