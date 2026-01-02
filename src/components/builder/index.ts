@@ -6,3 +6,4 @@ export { ColorDock } from "./ColorDock";
 export { FloatingPreview } from "./FloatingPreview";
 export { TileMatrix } from "./TileMatrix";
 export { PatternSelector } from "./PatternSelector";
+export { BorderSelector, initializeBorderState } from "./BorderSelector";

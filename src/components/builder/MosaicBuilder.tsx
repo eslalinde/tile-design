@@ -2,12 +2,14 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { Mosaic } from "@/hooks/useMosaics";
 import { useHistoryState } from "@/hooks/useHistoryState";
-import type { PartColor, RectanglePattern } from "@/types/mosaic";
+import type { PartColor, RectanglePattern, BorderState } from "@/types/mosaic";
 import type { MosaicColor } from "@/data/colors";
+import type { CategoryName } from "@/data/categories";
 import { CompactPartSelector } from "./CompactPartSelector";
 import { ColorDock } from "./ColorDock";
-import { TileMatrix } from "./TileMatrix";
+import { TileMatrix, type BorderData } from "./TileMatrix";
 import { PatternSelector } from "./PatternSelector";
+import { BorderSelector } from "./BorderSelector";
 import { getDefaultPattern } from "@/lib/patterns";
 import {
   Undo2,
@@ -20,6 +22,9 @@ import {
   Info,
   Check,
 } from "lucide-react";
+
+// Categories that support borders (square-based mosaics)
+const BORDER_CATEGORIES = ["paris", "barcelona", "morocco", "square"];
 
 // Collapsible Info Panel Component
 function InfoPanel({ mosaic, partsCount }: { mosaic: Mosaic; partsCount: number }) {
@@ -248,12 +253,31 @@ export function MosaicBuilder({
     () => initialPattern || getDefaultPattern(mosaic.shape) || "brick"
   );
 
+  // Border state for square tiles
+  const [selectedBorder, setSelectedBorder] = useState<BorderState | null>(null);
+
   // Parse rotation from mosaic
   const rotation = useMemo(() => parseRotation(mosaic), [mosaic]);
   
   // Check if mosaic is rectangular
   const isRectangular = mosaic.shape === "rectangle";
   const tileAspectRatio = mosaic.width && mosaic.height ? mosaic.width / mosaic.height : 1;
+
+  // Check if mosaic supports borders
+  const supportsBorder = BORDER_CATEGORIES.includes(mosaic.category);
+
+  // Convert BorderState to BorderData for TileMatrix
+  const borderData: BorderData | undefined = useMemo(() => {
+    if (!selectedBorder) return undefined;
+    return {
+      cornerSvg: selectedBorder.cornerSvg,
+      sideSvg1: selectedBorder.sideSvg1,
+      sideSvg2: selectedBorder.sideSvg2,
+      cornerParts: selectedBorder.cornerParts,
+      sideParts1: selectedBorder.sideParts1,
+      sideParts2: selectedBorder.sideParts2,
+    };
+  }, [selectedBorder]);
 
   // Update SVG with current parts colors
   const currentSvg = useMemo(() => {
@@ -429,6 +453,17 @@ export function MosaicBuilder({
                 />
               </div>
             )}
+
+            {/* Border Selector - Only for square-based tiles */}
+            {supportsBorder && (
+              <div className="mb-5">
+                <BorderSelector
+                  category={mosaic.category as CategoryName}
+                  selectedBorder={selectedBorder}
+                  onSelectBorder={setSelectedBorder}
+                />
+              </div>
+            )}
             
             {/* Parts Selector */}
             <CompactPartSelector
@@ -467,7 +502,8 @@ export function MosaicBuilder({
               svg={currentSvg}
               parts={parts}
               rotation={rotation}
-              showBorder={mosaic.category === "border"}
+              showBorder={!!selectedBorder}
+              borderData={borderData}
               tileWidth={mosaic.width}
               tileHeight={mosaic.height}
               pattern={isRectangular ? selectedPattern : undefined}

@@ -7,7 +7,6 @@ export const categories: Category[] = [
   { name: "paris", display: "Paris" },
   { name: "barcelona", display: "Barcelona" },
   { name: "morocco", display: "Morocco" },
-  { name: "border", display: "Border" },
   { name: "square", display: "Square" },
   { name: "rectangle", display: "Rectangle" },
   { name: "hexagonal", display: "Hexagonal" },

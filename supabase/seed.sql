@@ -466,10 +466,196 @@ INSERT INTO mosaics (name, category, type, shape, svg, width, height, rotation, 
 '{"part1": "#D4C6C4"}',
 'G1 Superior - Classic fish scale tile 120x120mm (solid)', 1);
 
+-- =====================================================
+-- BORDER DEFINITIONS (for square mosaics)
+-- Each border has: corner SVG + 1-2 side SVGs (all 200x200)
+-- =====================================================
+
+INSERT INTO border_definitions (name, category, corner_svg, side_svg_1, side_svg_2, default_colors, description, display_order) VALUES
+-- Paris Border 01: Classic geometric corner with line sides
+('Paris Border 01', 'paris',
+-- Corner SVG (200x200) - L-shaped corner design, rotated for position (4,4)
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#DADECF"/>
+  </g>
+  <g id="part2">
+    <rect x="0" y="160" width="200" height="40" fill="#44494D"/>
+    <rect x="160" y="0" width="40" height="200" fill="#44494D"/>
+  </g>
+  <g id="part3">
+    <rect x="0" y="0" width="40" height="40" fill="#01A8B8"/>
+  </g>
+</svg>',
+-- Side SVG 1 (200x200) - Line at bottom for row 4
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#DADECF"/>
+  </g>
+  <g id="part2">
+    <rect x="0" y="160" width="200" height="40" fill="#44494D"/>
+  </g>
+  <g id="part3">
+    <circle cx="100" cy="80" r="25" fill="#01A8B8"/>
+  </g>
+</svg>',
+NULL, -- No side_svg_2 (single side pattern)
+'{"part1": "#DADECF", "part2": "#44494D", "part3": "#01A8B8"}',
+'Classic Paris border with geometric corner', 1),
+
+-- Paris Border 02: Diamond corner with alternating sides
+('Paris Border 02', 'paris',
+-- Corner SVG - rotated for position (4,4)
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#EFEFEF"/>
+  </g>
+  <g id="part2">
+    <path d="M200,200 L150,200 L150,150 L200,150 Z" fill="#554840"/>
+    <path d="M0,0 L50,0 L50,50 L0,50 Z" fill="#554840"/>
+  </g>
+  <g id="part3">
+    <path d="M100,50 L150,100 L100,150 L50,100 Z" fill="#C27547"/>
+  </g>
+</svg>',
+-- Side SVG 1 - line at bottom for row 4
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#EFEFEF"/>
+  </g>
+  <g id="part2">
+    <rect x="0" y="170" width="200" height="30" fill="#554840"/>
+  </g>
+  <g id="part3">
+    <path d="M50,85 L100,35 L150,85 L100,135 Z" fill="#C27547"/>
+  </g>
+</svg>',
+-- Side SVG 2 (alternating) - line at bottom for row 4
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#EFEFEF"/>
+  </g>
+  <g id="part2">
+    <rect x="0" y="170" width="200" height="30" fill="#554840"/>
+  </g>
+  <g id="part3">
+    <circle cx="100" cy="85" r="35" fill="#C27547"/>
+  </g>
+</svg>',
+'{"part1": "#EFEFEF", "part2": "#554840", "part3": "#C27547"}',
+'Paris border with alternating diamond and circle sides', 2),
+
+-- Barcelona Border 01: Wave-inspired corner
+('Barcelona Border 01', 'barcelona',
+-- Corner SVG - rotated for position (4,4)
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#96CDE7"/>
+  </g>
+  <g id="part2">
+    <path d="M200,200 Q150,150 200,100 L200,200 Z" fill="#4B9ED7"/>
+    <path d="M0,0 Q50,50 0,100 L0,0 Z" fill="#4B9ED7"/>
+  </g>
+  <g id="part3">
+    <circle cx="50" cy="150" r="20" fill="#EFEFEF"/>
+  </g>
+</svg>',
+-- Side SVG 1 - wave at bottom for row 4
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#96CDE7"/>
+  </g>
+  <g id="part2">
+    <path d="M0,200 Q100,150 200,200 L200,160 Q100,110 0,160 Z" fill="#4B9ED7"/>
+  </g>
+  <g id="part3">
+    <circle cx="100" cy="70" r="30" fill="#EFEFEF"/>
+  </g>
+</svg>',
+NULL,
+'{"part1": "#96CDE7", "part2": "#4B9ED7", "part3": "#EFEFEF"}',
+'Barcelona wave border inspired by Gaudí', 1),
+
+-- Morocco Border 01: Geometric star corner
+('Morocco Border 01', 'morocco',
+-- Corner SVG - rotated for position (4,4)
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#D4A57A"/>
+  </g>
+  <g id="part2">
+    <path d="M200,200 L140,200 L140,140 L200,140 Z" fill="#2E3236"/>
+    <path d="M0,0 L60,0 L60,60 L0,60 Z" fill="#2E3236"/>
+  </g>
+  <g id="part3">
+    <path d="M100,60 L140,100 L100,140 L60,100 Z" fill="#01A8B8"/>
+  </g>
+</svg>',
+-- Side SVG 1 - line at bottom for row 4
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#D4A57A"/>
+  </g>
+  <g id="part2">
+    <rect x="0" y="160" width="200" height="40" fill="#2E3236"/>
+    <path d="M50,160 L100,100 L150,160 Z" fill="#2E3236"/>
+  </g>
+  <g id="part3">
+    <circle cx="100" cy="50" r="25" fill="#01A8B8"/>
+  </g>
+</svg>',
+-- Side SVG 2 - line at bottom for row 4
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#D4A57A"/>
+  </g>
+  <g id="part2">
+    <rect x="0" y="160" width="200" height="40" fill="#2E3236"/>
+  </g>
+  <g id="part3">
+    <path d="M100,60 L130,90 L100,120 L70,90 Z" fill="#01A8B8"/>
+  </g>
+</svg>',
+'{"part1": "#D4A57A", "part2": "#2E3236", "part3": "#01A8B8"}',
+'Moroccan geometric border with star motif', 1),
+
+-- Square Border 01: Simple elegant corner
+('Square Border 01', 'square',
+-- Corner SVG - rotated for position (4,4)
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#C1C8CF"/>
+  </g>
+  <g id="part2">
+    <rect x="150" y="0" width="50" height="200" fill="#554840"/>
+    <rect x="0" y="150" width="200" height="50" fill="#554840"/>
+  </g>
+  <g id="part3">
+    <rect x="0" y="0" width="50" height="50" fill="#7D513B"/>
+  </g>
+</svg>',
+-- Side SVG 1 - line at bottom for row 4
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="part1">
+    <rect width="200" height="200" fill="#C1C8CF"/>
+  </g>
+  <g id="part2">
+    <rect x="0" y="150" width="200" height="50" fill="#554840"/>
+  </g>
+  <g id="part3">
+    <rect x="75" y="50" width="50" height="50" fill="#7D513B"/>
+  </g>
+</svg>',
+NULL,
+'{"part1": "#C1C8CF", "part2": "#554840", "part3": "#7D513B"}',
+'Simple square border with elegant corner', 1);
+
 -- Log seed completion
 DO $$
 BEGIN
-  RAISE NOTICE 'Seed completed: % mosaics inserted', (SELECT COUNT(*) FROM mosaics);
+  RAISE NOTICE 'Seed completed: % mosaics inserted, % border definitions inserted', 
+    (SELECT COUNT(*) FROM mosaics),
+    (SELECT COUNT(*) FROM border_definitions);
 END $$;
 
 

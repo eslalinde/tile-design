@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      border_definitions: {
+        Row: {
+          id: string
+          name: string
+          category: string
+          corner_svg: string
+          side_svg_1: string
+          side_svg_2: string | null
+          default_colors: Json | null
+          description: string | null
+          is_active: boolean
+          display_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          category: string
+          corner_svg: string
+          side_svg_1: string
+          side_svg_2?: string | null
+          default_colors?: Json | null
+          description?: string | null
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          category?: string
+          corner_svg?: string
+          side_svg_1?: string
+          side_svg_2?: string | null
+          default_colors?: Json | null
+          description?: string | null
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mosaics: {
         Row: {
           category: string

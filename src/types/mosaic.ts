@@ -42,10 +42,29 @@ export interface PartColor {
   colorHex: string;
 }
 
-export interface BorderState {
+// Border definition from database
+export interface BorderDefinition {
+  id: string;
   name: string;
-  svg: string;
-  parts: PartColor[];
+  category: CategoryName;
+  cornerSvg: string;      // SVG 200x200 for corner (already rotated)
+  sideSvg1: string;       // First side SVG (horizontal orientation)
+  sideSvg2?: string;      // Second side SVG (optional, for alternating)
+  defaultColors?: Record<string, string>;
+  description?: string;
+  displayOrder: number;
+}
+
+// Runtime state for a border being edited
+export interface BorderState {
+  definitionId: string;
+  name: string;
+  cornerSvg: string;
+  sideSvg1: string;
+  sideSvg2?: string;
+  cornerParts: PartColor[];
+  sideParts1: PartColor[];
+  sideParts2?: PartColor[];
 }
 
 export interface MosaicState {

@@ -509,7 +509,7 @@ These solid tiles can be used to create different patterns:
 
 ### Phase 4 – User & Storage
 * [ ] Authentication
-* [ ] Saved mosaics
+* [x] Saved mosaics
 * [ ] Preview generation
 
 ### Phase 5 – Quotation
@@ -522,6 +522,7 @@ These solid tiles can be used to create different patterns:
 - [ ] 
 
 ### Phase 6 – Optimization
+* [ ] Color palette from mosaicos
 * [ ] Performance tuning
 * [ ] UX refinement
 * [ ] Analytics & metrics

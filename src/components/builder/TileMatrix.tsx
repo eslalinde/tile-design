@@ -2,6 +2,16 @@ import React, { useMemo, memo } from "react";
 import { cn } from "@/lib/utils";
 import type { PartColor, RectanglePattern } from "@/types/mosaic";
 
+// Border data for rendering corner and side tiles
+export interface BorderData {
+  cornerSvg: string;
+  sideSvg1: string;
+  sideSvg2?: string;
+  cornerParts: PartColor[];
+  sideParts1: PartColor[];
+  sideParts2?: PartColor[];
+}
+
 interface TileMatrixProps {
   svg: string;
   parts: PartColor[];
@@ -14,6 +24,8 @@ interface TileMatrixProps {
   pattern?: RectanglePattern;
   // Tile shape for different rendering modes
   shape?: "square" | "hexagon" | "rectangle" | "g1";
+  // Border data for square tiles
+  borderData?: BorderData;
 }
 
 // Default rotation pattern for a 4x4 grid (5x5 with border)
@@ -91,15 +103,50 @@ const SquareTile = memo(function SquareTile({
   );
 });
 
+// Border tile component for rendering corner and side tiles
+const BorderTile = memo(function BorderTile({
+  svg,
+  rotation,
+  row,
+  col,
+  type,
+}: {
+  svg: string;
+  rotation: number;
+  row: number;
+  col: number;
+  type: "corner" | "side";
+}) {
+  return (
+    <div
+      className={cn(
+        "aspect-square overflow-hidden rounded-sm bg-white shadow-sm",
+        type === "corner" && "ring-2 ring-brand-300"
+      )}
+      style={{
+        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+      }}
+      title={`Border ${type} (${row},${col})${rotation ? ` - ${rotation}°` : ""}`}
+    >
+      <div
+        className="h-full w-full [&>svg]:w-full [&>svg]:h-full"
+        dangerouslySetInnerHTML={{ __html: svg }}
+      />
+    </div>
+  );
+});
+
 // Standard square grid matrix
 function SquareMatrix({
   coloredSvg,
   rotation,
   showBorder,
+  borderData,
 }: {
   coloredSvg: string;
   rotation: number[][];
   showBorder: boolean;
+  borderData?: BorderData;
 }) {
   // Ensure we have a 5x5 rotation matrix
   const rotationMatrix = useMemo(() => {
@@ -123,9 +170,124 @@ function SquareMatrix({
     return matrix;
   }, [rotation]);
 
-  // Determine which cells are border cells
-  const isBorderCell = (row: number, col: number): boolean => {
-    return row === 4 || col === 4;
+  // Apply colors to border SVGs
+  const coloredCornerSvg = useMemo(() => {
+    if (!borderData?.cornerSvg) return null;
+    return applyColorsToSvg(borderData.cornerSvg, borderData.cornerParts);
+  }, [borderData?.cornerSvg, borderData?.cornerParts]);
+
+  const coloredSideSvg1 = useMemo(() => {
+    if (!borderData?.sideSvg1) return null;
+    return applyColorsToSvg(borderData.sideSvg1, borderData.sideParts1);
+  }, [borderData?.sideSvg1, borderData?.sideParts1]);
+
+  const coloredSideSvg2 = useMemo(() => {
+    if (!borderData?.sideSvg2 || !borderData?.sideParts2) return null;
+    return applyColorsToSvg(borderData.sideSvg2, borderData.sideParts2);
+  }, [borderData?.sideSvg2, borderData?.sideParts2]);
+
+  // Get the appropriate side SVG for a given position (alternating if sideSvg2 exists)
+  const getSideSvg = (index: number): string | null => {
+    if (!coloredSideSvg1) return null;
+    if (!coloredSideSvg2) return coloredSideSvg1;
+    // Alternate between side1 and side2
+    return index % 2 === 0 ? coloredSideSvg1 : coloredSideSvg2;
+  };
+
+  // Render the appropriate tile for a cell
+  const renderCell = (row: number, col: number) => {
+    const key = `${row}-${col}`;
+
+    // Corner position (4,4)
+    if (row === 4 && col === 4) {
+      if (showBorder && coloredCornerSvg) {
+        return (
+          <BorderTile
+            key={key}
+            svg={coloredCornerSvg}
+            rotation={0}
+            row={row}
+            col={col}
+            type="corner"
+          />
+        );
+      }
+      // Empty corner placeholder
+      return (
+        <div
+          key={key}
+          className="aspect-square rounded-sm bg-surface-100 border border-dashed border-surface-300"
+          title={`Corner tile (${row},${col})`}
+        />
+      );
+    }
+
+    // Bottom edge (row 4, cols 0-3) - horizontal sides
+    if (row === 4 && col < 4) {
+      if (showBorder && coloredSideSvg1) {
+        const sideSvg = getSideSvg(col);
+        if (sideSvg) {
+          return (
+            <BorderTile
+              key={key}
+              svg={sideSvg}
+              rotation={0}
+              row={row}
+              col={col}
+              type="side"
+            />
+          );
+        }
+      }
+      // Empty side placeholder
+      return (
+        <div
+          key={key}
+          className="aspect-square rounded-sm bg-surface-100 border border-dashed border-surface-300"
+          title={`Side tile (${row},${col})`}
+        />
+      );
+    }
+
+    // Right edge (rows 0-3, col 4) - vertical sides (rotated -90° / 270°)
+    if (col === 4 && row < 4) {
+      if (showBorder && coloredSideSvg1) {
+        const sideSvg = getSideSvg(row);
+        if (sideSvg) {
+          return (
+            <BorderTile
+              key={key}
+              svg={sideSvg}
+              rotation={-90}
+              row={row}
+              col={col}
+              type="side"
+            />
+          );
+        }
+      }
+      // Empty side placeholder
+      return (
+        <div
+          key={key}
+          className="aspect-square rounded-sm bg-surface-100 border border-dashed border-surface-300"
+          title={`Side tile (${row},${col})`}
+        />
+      );
+    }
+
+    // Regular mosaic tile (4x4 area)
+    return (
+      <SquareTile
+        key={key}
+        svg={coloredSvg}
+        rotation={rotationMatrix[row][col]}
+        isBorder={false}
+        showBorder={showBorder}
+        row={row}
+        col={col}
+      />
+    );
   };
 
   return (
@@ -138,17 +300,7 @@ function SquareMatrix({
         }}
       >
         {Array.from({ length: 5 }).map((_, row) =>
-          Array.from({ length: 5 }).map((_, col) => (
-            <SquareTile
-              key={`${row}-${col}`}
-              svg={coloredSvg}
-              rotation={rotationMatrix[row][col]}
-              isBorder={isBorderCell(row, col)}
-              showBorder={showBorder}
-              row={row}
-              col={col}
-            />
-          ))
+          Array.from({ length: 5 }).map((_, col) => renderCell(row, col))
         )}
       </div>
 
@@ -158,10 +310,23 @@ function SquareMatrix({
           <div className="h-3 w-3 rounded-sm bg-white shadow-sm" />
           <span>Main pattern (4×4)</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded-sm bg-surface-100 border border-dashed border-surface-300" />
-          <span>Border area</span>
-        </div>
+        {showBorder && borderData ? (
+          <>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm bg-white shadow-sm ring-1 ring-brand-300" />
+              <span>Corner</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-sm bg-white shadow-sm" />
+              <span>Side tiles</span>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <div className="h-3 w-3 rounded-sm bg-surface-100 border border-dashed border-surface-300" />
+            <span>Border area</span>
+          </div>
+        )}
       </div>
     </>
   );
@@ -704,6 +869,7 @@ export function TileMatrix({
   tileHeight,
   pattern,
   shape = "square",
+  borderData,
 }: TileMatrixProps) {
   // Apply colors to SVG
   const coloredSvg = useMemo(() => applyColorsToSvg(svg, parts), [svg, parts]);
@@ -740,6 +906,7 @@ export function TileMatrix({
         coloredSvg={coloredSvg}
         rotation={rotation}
         showBorder={showBorder}
+        borderData={borderData}
       />
     );
   };

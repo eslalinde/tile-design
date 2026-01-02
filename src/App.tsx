@@ -219,7 +219,7 @@ function App() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-surface-600">
                     <Grid3X3 className="h-4 w-4 text-brand-500" />
-                    <span>8 Categories</span>
+                    <span>7 Categories</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-surface-600">
                     <Sparkles className="h-4 w-4 text-brand-500" />
@@ -359,7 +359,6 @@ function App() {
                     </p>
                   </div>
 
-                  {/* Mosaic grid with tiles from Supabase */}
                   <MosaicGrid
                     category={selectedCategory}
                     onSelectMosaic={handleSelectMosaic}
