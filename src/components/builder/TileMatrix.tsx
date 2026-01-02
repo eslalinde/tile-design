@@ -573,59 +573,60 @@ function RectangularMatrix({
   // Dynamically calculates tile dimensions based on aspectRatio
   const renderHerringbonePattern = () => {
     const viewBoxSize = 200;
-    const g = 1; // gap between tiles
+    const g = 0.8; // gap between tiles (grout line)
+    const center = viewBoxSize / 2;
     
-    // Calculate tile dimensions based on aspectRatio
-    // For herringbone, we need a base unit and scale by aspect ratio
-    // aspectRatio = width / height (e.g., 3:1 means width is 3x height)
-    const baseUnit = 18; // Base height unit for calculations
+    // Calculate tile dimensions to match brick/stack-bond visual size
+    // Target: ~3 tile widths visible across the viewBox
+    const targetTilesAcross = 3;
+    const effectiveWidth = viewBoxSize / Math.sqrt(2); // Account for 45° rotation
     
-    // Horizontal tile: width = baseUnit * aspectRatio, height = baseUnit
-    const hH = baseUnit;
-    const hW = baseUnit * aspectRatio;
+    // Calculate tile width to fit target number of tiles
+    const hW = effectiveWidth / targetTilesAcross; // Horizontal tile width
+    const hH = hW / aspectRatio; // Horizontal tile height (maintains aspect ratio)
     
-    // Vertical tile: rotated 90°, so width = baseUnit, height = baseUnit * aspectRatio
-    const vW = baseUnit;
-    const vH = baseUnit * aspectRatio;
+    // Vertical tile: rotated 90°, so swap dimensions
+    const vW = hH; // Vertical tile width = horizontal tile height
+    const vH = hW; // Vertical tile height = horizontal tile width
     
-    const rotateTransform = `rotate(45, ${viewBoxSize / 2}, ${viewBoxSize / 2})`;
+    const rotateTransform = `rotate(45, ${center}, ${center})`;
     
-    // Steps for diagonal movement of L-shapes
-    const stepX = vW + g; // horizontal step for each L
-    const stepY = hH + g; // vertical step for each L
+    // L-shape dimensions: horizontal tile on top, vertical tile below-left
+    const lWidth = hW; // Width of L-shape
+    const lHeight = hH + g + vH; // Total height of L-shape
     
-    // Calculate column offset based on tile dimensions
-    // Each column needs to offset by (hW + g) horizontally and -(hW + g) vertically
-    const columnSpacing = hW + g;
+    // Steps for pattern repetition
+    const stepX = vW + g; // Diagonal step X (along the L column)
+    const stepY = hH + g; // Diagonal step Y (along the L column)
+    const columnSpacing = hW + g; // Horizontal spacing between columns
     
-    // Determine number of L shapes per column based on viewbox and tile size
-    const diagonalLength = viewBoxSize * Math.sqrt(2); // diagonal of the viewbox
-    const lShapesPerColumn = Math.ceil(diagonalLength / (stepX + stepY)) + 4;
-    const numColumns = 4;
+    // Calculate coverage needed: after 45° rotation, we need to cover corners
+    // The diagonal of the viewbox is viewBoxSize * sqrt(2) ≈ 283
+    const coverageNeeded = viewBoxSize * Math.sqrt(2);
     
-    // Generate column offsets dynamically
-    const columnOffsets = Array.from({ length: numColumns }, (_, i) => ({
-      x: i * columnSpacing,
-      y: -i * columnSpacing,
-    }));
+    // Number of L-shapes per diagonal column (extra to cover bottom)
+    const lShapesPerColumn = Math.ceil(coverageNeeded / (stepX + stepY)) + 8;
+    
+    // Number of columns to fill width
+    const numColumns = Math.ceil(coverageNeeded / columnSpacing) + 2;
     
     const tiles: React.ReactNode[] = [];
     
-    // Starting position adjusted for the pattern to be centered
-    const startX = -viewBoxSize * 0.3;
-    const startY = -viewBoxSize * 0.1;
+    // Start position: offset to ensure full coverage after 45° rotation
+    // We need to start further left to cover the left side of the viewbox
+    const startX = center - coverageNeeded * 0.75;
+    const startY = center - coverageNeeded * 0.25;
     
-    // Generate 4 columns of L shapes
+    // Generate columns of L shapes
     for (let colIdx = 0; colIdx < numColumns; colIdx++) {
-      const colOffset = columnOffsets[colIdx];
+      const colOffsetX = colIdx * columnSpacing;
+      const colOffsetY = -colIdx * columnSpacing;
       
       for (let i = 0; i < lShapesPerColumn; i++) {
-        const offsetX = i * stepX + colOffset.x;
-        const offsetY = i * stepY + colOffset.y;
-        const baseX = startX + offsetX;
-        const baseY = startY + offsetY;
+        const baseX = startX + i * stepX + colOffsetX;
+        const baseY = startY + i * stepY + colOffsetY;
         
-        // H: horizontal tile (horizontal rectangle)
+        // H: horizontal tile (top of L)
         tiles.push(
           <rect
             key={`h${colIdx}-${i}`}
@@ -634,12 +635,12 @@ function RectangularMatrix({
             width={hW}
             height={hH}
             fill={tileColor}
-            rx={2}
+            rx={1}
             transform={rotateTransform}
           />
         );
         
-        // V: vertical tile below H, aligned left
+        // V: vertical tile (bottom-left of L)
         tiles.push(
           <rect
             key={`v${colIdx}-${i}`}
@@ -648,7 +649,7 @@ function RectangularMatrix({
             width={vW}
             height={vH}
             fill={tileColor}
-            rx={2}
+            rx={1}
             transform={rotateTransform}
           />
         );
