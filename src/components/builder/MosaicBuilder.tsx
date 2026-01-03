@@ -10,6 +10,26 @@ import { TileMatrix, type BorderData } from "./TileMatrix";
 import { PatternSelector } from "./PatternSelector";
 import { BorderSelector } from "./BorderSelector";
 import { getDefaultPattern } from "@/lib/patterns";
+
+// Helper to apply colors to SVG
+function applyColorsToSvg(svg: string, parts: PartColor[]): string {
+  if (parts.length === 0) return svg;
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, "image/svg+xml");
+
+  parts.forEach(({ partId, colorHex }) => {
+    const group = doc.getElementById(partId);
+    if (!group) return;
+
+    const elements = group.querySelectorAll("path, rect, circle, polygon, ellipse");
+    elements.forEach((el) => {
+      el.setAttribute("fill", colorHex);
+    });
+  });
+
+  return new XMLSerializer().serializeToString(doc);
+}
 import {
   Undo2,
   Redo2,
@@ -30,10 +50,16 @@ function InfoPanel({
   mosaic, 
   partsCount,
   selectedBorder,
+  coloredBorderSvgs,
 }: { 
   mosaic: Mosaic; 
   partsCount: number;
   selectedBorder: BorderState | null;
+  coloredBorderSvgs?: {
+    cornerSvg: string;
+    sideSvg1: string;
+    sideSvg2?: string;
+  } | null;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   
@@ -120,7 +146,7 @@ function InfoPanel({
         </div>
 
         {/* Border Info - Only shown when a border is selected */}
-        {selectedBorder && (
+        {selectedBorder && coloredBorderSvgs && (
           <div className="pt-4 border-t border-surface-200">
             <h4 className="text-[10px] font-semibold text-surface-500 uppercase tracking-wider mb-2">
               Border
@@ -129,13 +155,13 @@ function InfoPanel({
               {selectedBorder.name}
             </p>
             
-            {/* Border SVG Previews */}
+            {/* Border SVG Previews - Using colored SVGs */}
             <div className="grid grid-cols-3 gap-2">
               {/* Corner */}
               <div className="flex flex-col items-center">
                 <div
                   className="aspect-square w-full rounded bg-surface-50 border border-surface-200 overflow-hidden [&>svg]:w-full [&>svg]:h-full"
-                  dangerouslySetInnerHTML={{ __html: selectedBorder.cornerSvg }}
+                  dangerouslySetInnerHTML={{ __html: coloredBorderSvgs.cornerSvg }}
                 />
                 <span className="text-[9px] text-surface-400 mt-1 font-medium uppercase">
                   Corner
@@ -146,19 +172,19 @@ function InfoPanel({
               <div className="flex flex-col items-center">
                 <div
                   className="aspect-square w-full rounded bg-surface-50 border border-surface-200 overflow-hidden [&>svg]:w-full [&>svg]:h-full"
-                  dangerouslySetInnerHTML={{ __html: selectedBorder.sideSvg1 }}
+                  dangerouslySetInnerHTML={{ __html: coloredBorderSvgs.sideSvg1 }}
                 />
                 <span className="text-[9px] text-surface-400 mt-1 font-medium uppercase">
-                  {selectedBorder.sideSvg2 ? "Side 1" : "Side"}
+                  {coloredBorderSvgs.sideSvg2 ? "Side 1" : "Side"}
                 </span>
               </div>
               
               {/* Side 2 (if exists) */}
-              {selectedBorder.sideSvg2 ? (
+              {coloredBorderSvgs.sideSvg2 ? (
                 <div className="flex flex-col items-center">
                   <div
                     className="aspect-square w-full rounded bg-surface-50 border border-surface-200 overflow-hidden [&>svg]:w-full [&>svg]:h-full"
-                    dangerouslySetInnerHTML={{ __html: selectedBorder.sideSvg2 }}
+                    dangerouslySetInnerHTML={{ __html: coloredBorderSvgs.sideSvg2 }}
                   />
                   <span className="text-[9px] text-surface-400 mt-1 font-medium uppercase">
                     Side 2
@@ -328,16 +354,20 @@ export function MosaicBuilder({
   // Check if mosaic supports borders
   const supportsBorder = BORDER_CATEGORIES.includes(mosaic.category);
 
-  // Convert BorderState to BorderData for TileMatrix
+  // Convert BorderState to BorderData for TileMatrix with colored SVGs
+  // All border components use the same shared parts
   const borderData: BorderData | undefined = useMemo(() => {
     if (!selectedBorder) return undefined;
+    const { parts: borderParts } = selectedBorder;
     return {
-      cornerSvg: selectedBorder.cornerSvg,
-      sideSvg1: selectedBorder.sideSvg1,
-      sideSvg2: selectedBorder.sideSvg2,
-      cornerParts: selectedBorder.cornerParts,
-      sideParts1: selectedBorder.sideParts1,
-      sideParts2: selectedBorder.sideParts2,
+      cornerSvg: applyColorsToSvg(selectedBorder.cornerSvg, borderParts),
+      sideSvg1: applyColorsToSvg(selectedBorder.sideSvg1, borderParts),
+      sideSvg2: selectedBorder.sideSvg2
+        ? applyColorsToSvg(selectedBorder.sideSvg2, borderParts)
+        : undefined,
+      cornerParts: borderParts,
+      sideParts1: borderParts,
+      sideParts2: borderParts,
     };
   }, [selectedBorder]);
 
@@ -373,12 +403,29 @@ export function MosaicBuilder({
 
       // If a part is selected, apply the color
       if (selectedPartId) {
-        setParts((draft) => {
-          const part = draft.find((p) => p.partId === selectedPartId);
-          if (part) {
-            part.colorHex = color.hex;
-          }
-        });
+        // Check if it's a border part (format: "border:part1")
+        if (selectedPartId.startsWith("border:") && selectedBorder) {
+          const partId = selectedPartId.replace("border:", "");
+          
+          // Update border part color (shared across all border components)
+          setSelectedBorder((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              parts: prev.parts.map((p) =>
+                p.partId === partId ? { ...p, colorHex: color.hex } : p
+              ),
+            };
+          });
+        } else {
+          // Update mosaic part color
+          setParts((draft) => {
+            const part = draft.find((p) => p.partId === selectedPartId);
+            if (part) {
+              part.colorHex = color.hex;
+            }
+          });
+        }
 
         // Add to recent colors
         setRecentColors((prev) => {
@@ -387,7 +434,7 @@ export function MosaicBuilder({
         });
       }
     },
-    [selectedPartId, setParts]
+    [selectedPartId, selectedBorder, setParts]
   );
 
   // Reset colors to original
@@ -532,6 +579,7 @@ export function MosaicBuilder({
               parts={parts}
               selectedPartId={selectedPartId}
               onSelectPart={handleSelectPart}
+              borderState={selectedBorder}
             />
 
             {/* Color Palette */}
@@ -574,7 +622,16 @@ export function MosaicBuilder({
         </main>
 
         {/* Right Sidebar - Info Panel (Reference, Collapsible) */}
-        <InfoPanel mosaic={mosaic} partsCount={parts.length} selectedBorder={selectedBorder} />
+        <InfoPanel 
+          mosaic={mosaic} 
+          partsCount={parts.length} 
+          selectedBorder={selectedBorder}
+          coloredBorderSvgs={borderData ? {
+            cornerSvg: borderData.cornerSvg,
+            sideSvg1: borderData.sideSvg1,
+            sideSvg2: borderData.sideSvg2,
+          } : null}
+        />
       </div>
     </div>
   );

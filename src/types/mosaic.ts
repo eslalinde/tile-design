@@ -56,15 +56,14 @@ export interface BorderDefinition {
 }
 
 // Runtime state for a border being edited
+// All border components (corner, sides) share the same parts/colors
 export interface BorderState {
   definitionId: string;
   name: string;
   cornerSvg: string;
   sideSvg1: string;
   sideSvg2?: string;
-  cornerParts: PartColor[];
-  sideParts1: PartColor[];
-  sideParts2?: PartColor[];
+  parts: PartColor[]; // Shared parts for corner and all sides
 }
 
 export interface MosaicState {

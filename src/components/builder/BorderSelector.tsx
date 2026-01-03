@@ -11,6 +11,7 @@ interface BorderSelectorProps {
 }
 
 // Initialize border state from a BorderDefinition
+// Uses corner SVG as reference for parts (all components share the same parts)
 export function initializeBorderState(border: BorderDefinition): BorderState {
   return {
     definitionId: border.id,
@@ -18,9 +19,7 @@ export function initializeBorderState(border: BorderDefinition): BorderState {
     cornerSvg: border.cornerSvg,
     sideSvg1: border.sideSvg1,
     sideSvg2: border.sideSvg2,
-    cornerParts: extractPartsFromSvg(border.cornerSvg),
-    sideParts1: extractPartsFromSvg(border.sideSvg1),
-    sideParts2: border.sideSvg2 ? extractPartsFromSvg(border.sideSvg2) : undefined,
+    parts: extractPartsFromSvg(border.cornerSvg), // All components share these parts
   };
 }
 
