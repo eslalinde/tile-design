@@ -26,7 +26,15 @@ import {
 const BORDER_CATEGORIES = ["paris", "barcelona", "morocco", "square"];
 
 // Collapsible Info Panel Component
-function InfoPanel({ mosaic, partsCount }: { mosaic: Mosaic; partsCount: number }) {
+function InfoPanel({ 
+  mosaic, 
+  partsCount,
+  selectedBorder,
+}: { 
+  mosaic: Mosaic; 
+  partsCount: number;
+  selectedBorder: BorderState | null;
+}) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   
   // Calculate aspect ratio for proportional preview
@@ -50,7 +58,7 @@ function InfoPanel({ mosaic, partsCount }: { mosaic: Mosaic; partsCount: number 
   }
 
   return (
-    <aside className="w-56 flex-shrink-0 border-l border-surface-200 bg-white lg:w-64">
+    <aside className="w-56 flex-shrink-0 border-l border-surface-200 bg-white lg:w-64 overflow-y-auto">
       {/* Header with collapse button */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-200">
         <h3 className="text-xs font-semibold text-surface-600 uppercase tracking-wider">
@@ -81,7 +89,7 @@ function InfoPanel({ mosaic, partsCount }: { mosaic: Mosaic; partsCount: number 
         </div>
 
         {/* Tile Info */}
-        <div>
+        <div className="mb-4">
           <h4 className="text-[10px] font-semibold text-surface-500 uppercase tracking-wider mb-2">
             Details
           </h4>
@@ -110,6 +118,61 @@ function InfoPanel({ mosaic, partsCount }: { mosaic: Mosaic; partsCount: number 
             </div>
           </dl>
         </div>
+
+        {/* Border Info - Only shown when a border is selected */}
+        {selectedBorder && (
+          <div className="pt-4 border-t border-surface-200">
+            <h4 className="text-[10px] font-semibold text-surface-500 uppercase tracking-wider mb-2">
+              Border
+            </h4>
+            <p className="text-sm font-medium text-surface-900 mb-3">
+              {selectedBorder.name}
+            </p>
+            
+            {/* Border SVG Previews */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* Corner */}
+              <div className="flex flex-col items-center">
+                <div
+                  className="aspect-square w-full rounded bg-surface-50 border border-surface-200 overflow-hidden [&>svg]:w-full [&>svg]:h-full"
+                  dangerouslySetInnerHTML={{ __html: selectedBorder.cornerSvg }}
+                />
+                <span className="text-[9px] text-surface-400 mt-1 font-medium uppercase">
+                  Corner
+                </span>
+              </div>
+              
+              {/* Side 1 */}
+              <div className="flex flex-col items-center">
+                <div
+                  className="aspect-square w-full rounded bg-surface-50 border border-surface-200 overflow-hidden [&>svg]:w-full [&>svg]:h-full"
+                  dangerouslySetInnerHTML={{ __html: selectedBorder.sideSvg1 }}
+                />
+                <span className="text-[9px] text-surface-400 mt-1 font-medium uppercase">
+                  {selectedBorder.sideSvg2 ? "Side 1" : "Side"}
+                </span>
+              </div>
+              
+              {/* Side 2 (if exists) */}
+              {selectedBorder.sideSvg2 ? (
+                <div className="flex flex-col items-center">
+                  <div
+                    className="aspect-square w-full rounded bg-surface-50 border border-surface-200 overflow-hidden [&>svg]:w-full [&>svg]:h-full"
+                    dangerouslySetInnerHTML={{ __html: selectedBorder.sideSvg2 }}
+                  />
+                  <span className="text-[9px] text-surface-400 mt-1 font-medium uppercase">
+                    Side 2
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <div className="aspect-square w-full rounded bg-surface-50 border border-dashed border-surface-200" />
+                  <span className="text-[9px] text-surface-300 mt-1">—</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -511,7 +574,7 @@ export function MosaicBuilder({
         </main>
 
         {/* Right Sidebar - Info Panel (Reference, Collapsible) */}
-        <InfoPanel mosaic={mosaic} partsCount={parts.length} />
+        <InfoPanel mosaic={mosaic} partsCount={parts.length} selectedBorder={selectedBorder} />
       </div>
     </div>
   );

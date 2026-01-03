@@ -119,10 +119,7 @@ const BorderTile = memo(function BorderTile({
 }) {
   return (
     <div
-      className={cn(
-        "aspect-square overflow-hidden rounded-sm bg-white shadow-sm",
-        type === "corner" && "ring-2 ring-brand-300"
-      )}
+      className="aspect-square overflow-hidden rounded-sm bg-white shadow-sm"
       style={{
         transform: rotation ? `rotate(${rotation}deg)` : undefined,
       }}
