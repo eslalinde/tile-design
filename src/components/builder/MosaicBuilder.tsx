@@ -4,7 +4,6 @@ import type { Mosaic } from "@/hooks/useMosaics";
 import { useHistoryState } from "@/hooks/useHistoryState";
 import type { PartColor, RectanglePattern, BorderState } from "@/types/mosaic";
 import type { MosaicColor } from "@/data/colors";
-import type { CategoryName } from "@/data/categories";
 import { CompactPartSelector } from "./CompactPartSelector";
 import { ColorDock } from "./ColorDock";
 import { TileMatrix, type BorderData } from "./TileMatrix";
@@ -458,7 +457,6 @@ export function MosaicBuilder({
             {supportsBorder && (
               <div className="mb-5">
                 <BorderSelector
-                  category={mosaic.category as CategoryName}
                   selectedBorder={selectedBorder}
                   onSelectBorder={setSelectedBorder}
                 />

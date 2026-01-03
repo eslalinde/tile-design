@@ -501,8 +501,8 @@ These solid tiles can be used to create different patterns:
 
 ### Phase 3 - Advance Builder
 * [x] Real rectangular size
-* [ ] Basic Border implementation
-* [ ] Advance border with 3 tiles
+* [x] Basic Border implementation
+* [x] Advance border with 3 tiles
 * [x] Hexagonal tiles
 * [x] G1 tiles
 * [ ] Image tiles

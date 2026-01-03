@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronUp, ChevronDown, Check, X } from "lucide-react";
-import { useBorders } from "@/hooks/useBorders";
-import type { BorderDefinition, BorderState, PartColor } from "@/types/mosaic";
-import type { CategoryName } from "@/data/categories";
+import { useAllBorders } from "@/hooks/useBorders";
+import type { BorderDefinition, BorderState } from "@/types/mosaic";
 import { extractPartsFromSvg } from "@/hooks/useBorders";
 
 interface BorderSelectorProps {
-  category: CategoryName;
   selectedBorder: BorderState | null;
   onSelectBorder: (border: BorderState | null) => void;
 }
@@ -148,12 +146,11 @@ function NoBorderOption({
 }
 
 export function BorderSelector({
-  category,
   selectedBorder,
   onSelectBorder,
 }: BorderSelectorProps) {
   const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default
-  const { borders, loading, error } = useBorders(category);
+  const { borders, loading, error } = useAllBorders();
 
   const handleSelectBorder = (border: BorderDefinition) => {
     if (selectedBorder?.definitionId === border.id) {
@@ -204,11 +201,11 @@ export function BorderSelector({
       {/* Content - Collapsible */}
       <div
         className={cn(
-          "transition-all duration-300 ease-in-out overflow-hidden",
-          isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          "transition-all duration-300 ease-in-out",
+          isExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
         )}
       >
-        <div className="p-3">
+        <div className="p-3 max-h-[280px] overflow-y-auto">
           {loading ? (
             <div className="space-y-2">
               {[1, 2].map((i) => (
