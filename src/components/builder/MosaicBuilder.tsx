@@ -211,10 +211,12 @@ interface MosaicBuilderProps {
     mosaic: Mosaic,
     parts: PartColor[],
     currentSvg: string,
-    pattern?: RectanglePattern
+    pattern?: RectanglePattern,
+    border?: BorderState | null
   ) => void;
   initialParts?: PartColor[];
   initialPattern?: RectanglePattern;
+  initialBorder?: BorderState | null;
   isEditingExisting?: boolean;
 }
 
@@ -314,6 +316,7 @@ export function MosaicBuilder({
   onSave,
   initialParts,
   initialPattern,
+  initialBorder,
   isEditingExisting = false,
 }: MosaicBuilderProps) {
   // State with undo/redo history
@@ -342,7 +345,9 @@ export function MosaicBuilder({
   );
 
   // Border state for square tiles
-  const [selectedBorder, setSelectedBorder] = useState<BorderState | null>(null);
+  const [selectedBorder, setSelectedBorder] = useState<BorderState | null>(
+    () => initialBorder ?? null
+  );
 
   // Parse rotation from mosaic
   const rotation = useMemo(() => parseRotation(mosaic), [mosaic]);
@@ -450,12 +455,13 @@ export function MosaicBuilder({
     
     setSaveStatus("saving");
     
-    // Call the save function
+    // Call the save function with all design data including border
     onSave(
       mosaic,
       parts,
       currentSvg,
-      isRectangular ? selectedPattern : undefined
+      isRectangular ? selectedPattern : undefined,
+      selectedBorder
     );
     
     // Show saved feedback
@@ -465,7 +471,7 @@ export function MosaicBuilder({
     setTimeout(() => {
       setSaveStatus("idle");
     }, 2000);
-  }, [onSave, mosaic, parts, currentSvg, isRectangular, selectedPattern]);
+  }, [onSave, mosaic, parts, currentSvg, isRectangular, selectedPattern, selectedBorder]);
 
   // Keyboard shortcuts for undo/redo/save
   useEffect(() => {

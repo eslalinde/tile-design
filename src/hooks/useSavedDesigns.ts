@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { PartColor, RectanglePattern, MosaicShape } from "@/types/mosaic";
+import type { PartColor, RectanglePattern, MosaicShape, BorderState } from "@/types/mosaic";
 import type { CategoryName } from "@/data/categories";
 
 const STORAGE_KEY = "mosaic-saved-designs";
@@ -15,6 +15,7 @@ export interface SavedDesign {
   parts: PartColor[];
   svg: string;
   pattern?: RectanglePattern;
+  border?: BorderState; // Border state including SVGs and colors
   createdAt: string;
   updatedAt: string;
   customName?: string;

@@ -9,7 +9,7 @@ import { useSavedDesigns, type SavedDesign, type SaveDesignInput } from "@/hooks
 import { cn } from "@/lib/utils";
 import type { CategoryName } from "@/data/categories";
 import type { Mosaic } from "@/hooks/useMosaics";
-import type { PartColor, RectanglePattern } from "@/types/mosaic";
+import type { PartColor, RectanglePattern, BorderState } from "@/types/mosaic";
 import { Palette, Grid3X3, Sparkles, FolderHeart } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -84,7 +84,8 @@ function App() {
     mosaic: Mosaic,
     parts: PartColor[],
     currentSvg: string,
-    pattern?: RectanglePattern
+    pattern?: RectanglePattern,
+    border?: BorderState | null
   ) => {
     const designInput: SaveDesignInput = {
       mosaicId: mosaic.id,
@@ -96,6 +97,7 @@ function App() {
       parts,
       svg: currentSvg,
       pattern,
+      border: border ?? undefined, // Include border if present
     };
 
     if (editingDesignId) {
@@ -120,6 +122,13 @@ function App() {
     if (!editingDesignId) return undefined;
     const design = designs.find(d => d.id === editingDesignId);
     return design?.pattern;
+  }, [editingDesignId, designs]);
+
+  // Get initial border for MosaicBuilder when editing a saved design
+  const getInitialBorder = useCallback((): BorderState | undefined => {
+    if (!editingDesignId) return undefined;
+    const design = designs.find(d => d.id === editingDesignId);
+    return design?.border;
   }, [editingDesignId, designs]);
 
   // Handle step navigation
@@ -386,6 +395,7 @@ function App() {
               onSave={handleSaveDesign}
               initialParts={getInitialParts()}
               initialPattern={getInitialPattern()}
+              initialBorder={getInitialBorder()}
               isEditingExisting={!!editingDesignId}
             />
           </motion.div>
