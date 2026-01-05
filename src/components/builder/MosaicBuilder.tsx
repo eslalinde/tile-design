@@ -503,8 +503,8 @@ export function MosaicBuilder({
 
   return (
     <div className="flex flex-col min-h-0">
-      {/* Action Bar - Sticky below stepper */}
-      <div className="relative flex items-center justify-between gap-4 border-b border-surface-200 bg-white px-4 py-3 sticky top-[120px] z-[35] shadow-sm flex-shrink-0">
+      {/* Action Bar - Sticky below stepper (header 64px + stepper ~88px = ~152px) */}
+      <div className="relative flex items-center justify-between gap-4 border-b border-surface-200 bg-white px-4 py-3 sticky top-[152px] z-30 shadow-sm flex-shrink-0">
         {/* Left: Back button */}
         <button
           type="button"

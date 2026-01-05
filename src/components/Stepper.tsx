@@ -15,7 +15,7 @@ interface StepperProps {
 
 export function Stepper({ steps, currentStep, onStepClick }: StepperProps) {
   return (
-    <div className="w-full bg-white border-b border-surface-200">
+    <div className="sticky top-16 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-surface-200 shadow-sm">
       <div className="mx-auto max-w-4xl px-4 py-4 sm:px-6 lg:px-8">
         <nav aria-label="Progress">
           <ol className="flex items-center justify-between">
