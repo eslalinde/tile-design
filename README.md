@@ -508,7 +508,7 @@ These solid tiles can be used to create different patterns:
 * [ ] Image tiles (To define)
 
 ### Phase 4 – User & Storage
-* [ ] Authentication
+* [x] Authentication
 * [x] Saved mosaics
 * [ ] Preview generation
 * [ ] Migrar diseños a la cuenta

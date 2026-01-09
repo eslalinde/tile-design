@@ -1,203 +1,402 @@
 # 🔐 Passwordless Authentication with Supabase Auth
 
 ## 1. Overview
-This document describes the implementation of **passwordless authentication** using **Supabase Auth**.  
-Users authenticate using only their **email address** and a **one-time code (OTP)** or **Magic Link**, without passwords.
 
-The solution is designed to be:
-- Simple for users
-- Secure by default
-- Fast to implement
-- Scalable
+This document describes the implementation of **passwordless authentication** using **Supabase Auth** with **OTP (One-Time Password)** verification.
+
+Users authenticate using only their **email address** and a **6-digit code** sent to their inbox. The user **never leaves the application**, preserving their design work during the authentication process.
+
+### Key Design Decisions
+- **OTP Code over Magic Link**: Users stay in the app and enter a code instead of clicking an external link
+- **Soft Signup**: New users are created automatically when they first authenticate
+- **Design Preservation**: Authentication flow happens in a modal, keeping the mosaic design intact
 
 ---
 
 ## 2. Scope
+
 ### Included
 - Unified login and sign-up (passwordless)
-- Email-based authentication
+- Email-based OTP authentication
 - Session management using JWT
-- Protected backend endpoints
+- Protected quotations and user data
+- Habeas Data compliance (Colombian law)
 
 ### Not Included
-- Social login providers
+- Social login providers (Google, etc.)
+- Password-based authentication
 - Multi-factor authentication (future phase)
 
 ---
 
 ## 3. Tech Stack
-- **Auth Provider**: Supabase Auth
-- **Frontend**: Web App (Next.js / React)
-- **Backend**: API protected with JWT (Supabase or external)
-- **Email Provider**: Supabase Email (configurable with Resend / SendGrid)
+
+| Component | Technology |
+|-----------|------------|
+| Auth Provider | Supabase Auth |
+| Frontend | React 19 + Vite + TypeScript |
+| State Management | React Context (AuthContext) |
+| Email Provider | Supabase Email (SMTP configurable) |
+| Database | PostgreSQL (Supabase) |
 
 ---
 
 ## 4. User Flow – Email OTP Authentication
 
-### 4.1 Email Input
-1. User navigates to `/login`
-2. User enters their **email address**
-3. User clicks **“Send code”**
+### 4.1 Authentication Trigger
 
----
+The authentication flow is triggered when:
+1. User clicks **"Iniciar sesión"** (Login) in the header
+2. User clicks **"Cotizar"** (Quote) on a mosaic design
 
-### 4.2 OTP Generation and Delivery
-- Supabase generates a **one-time password (OTP)**
-- OTP properties:
-  - Expires in **10 minutes**
-  - Single-use only
-- Supabase sends the email automatically
+### 4.2 Email Input
 
----
-
-### 4.3 Code Verification
-1. User enters the received **OTP**
-2. Frontend submits the OTP to Supabase
-3. Supabase:
-   - Verifies the OTP
-   - Creates or retrieves the user
-   - Returns an **active session**
-
----
-
-### 4.4 Active Session
-- Client receives:
-  - `access_token` (JWT)
-  - `refresh_token`
-- User is redirected to the dashboard
-
----
-
-## 5. Alternative Flow – Magic Link (Optional)
-
-1. User enters their email
-2. Receives a **single-use magic link**
-3. Clicking the link:
-   - Validates the token
-   - Automatically logs the user in
-
-> 📌 Magic Links reduce friction and can be enabled as an optional UX improvement.
-
----
-
-## 6. High-Level Technical Flow
-
-```text
-User
-  ↓
-Frontend (Login UI)
-  ↓
-Supabase Auth (OTP / Magic Link)
-  ↓
-JWT + Refresh Token
-  ↓
-Frontend / Protected Backend APIs
+```
+┌─────────────────────────────────────┐
+│  Ingresa tu correo                  │
+│  ─────────────────                  │
+│  Correo electrónico                 │
+│  ┌─────────────────────────────┐    │
+│  │ 📧 tu@email.com             │    │
+│  └─────────────────────────────┘    │
+│                                     │
+│  [ Enviar código → ]                │
+└─────────────────────────────────────┘
 ```
 
-## 7. User Data Management
-- Supabase automatically creates users in the `auth.users` table after successful authentication.
-- Application-specific user data is stored in a custom table:
-  - `public.profiles`
+1. User enters their **email address**
+2. User clicks **"Enviar código"** (Send code)
+3. System calls `supabase.auth.signInWithOtp({ email })`
 
-### Example fields
-- `id` (UUID – references `auth.users.id`)
-- `email`
-- `created_at`
-- `role`
+### 4.3 OTP Generation and Delivery
 
-This separation keeps authentication concerns isolated from application domain data.
+Supabase automatically:
+- Generates a **6-digit numeric code**
+- Creates user in `auth.users` if new (soft signup)
+- Sends email with the code
+
+**OTP Properties:**
+| Property | Value |
+|----------|-------|
+| Format | 6 numeric digits |
+| Expiration | 10 minutes |
+| Usage | Single-use only |
+| Delivery | Email |
+
+### 4.4 Code Verification
+
+```
+┌─────────────────────────────────────┐
+│  Ingresa el código                  │
+│  ─────────────────                  │
+│  Enviamos un código de 6 dígitos a  │
+│  usuario@email.com                  │
+│                                     │
+│    [1] [2] [3] [4] [5] [6]         │
+│                                     │
+│  [ Verificar código ]               │
+│                                     │
+│  [ 🔄 Reenviar código ]            │
+│  [ ← Usar otro correo ]             │
+└─────────────────────────────────────┘
+```
+
+1. User enters the **6-digit code** received via email
+2. Frontend calls `supabase.auth.verifyOtp({ email, token, type: 'email' })`
+3. Supabase validates the code and returns a session
+
+**Code Input Features:**
+- Auto-focus on first digit
+- Auto-advance to next digit
+- Paste support (full code)
+- Auto-submit when complete
+- Keyboard navigation (arrows, backspace)
+
+### 4.5 Session Established
+
+Upon successful verification:
+- Client receives `access_token` (JWT) and `refresh_token`
+- Tokens are stored in `localStorage`
+- User profile is loaded from `public.users` table
+- AuthContext state is updated
 
 ---
 
-## 8. Security Considerations
+## 5. Session Management
+
+### Token Lifecycle
+
+| Token | Duration | Purpose |
+|-------|----------|---------|
+| Access Token | 1 hour | Authenticate API requests |
+| Refresh Token | 7 days | Renew access token |
+
+### Auto-Refresh Mechanism
+
+```
+┌──────────────────────────────────────────────────┐
+│  User authenticates                              │
+│         ↓                                        │
+│  Access Token (valid 1 hour)                     │
+│         ↓                                        │
+│  [Token expires]                                 │
+│         ↓                                        │
+│  Supabase client automatically uses              │
+│  Refresh Token to get new Access Token           │
+│         ↓                                        │
+│  User remains logged in (seamless)               │
+└──────────────────────────────────────────────────┘
+```
+
+**Session ends when:**
+- User clicks "Cerrar sesión" (Sign out)
+- Refresh token expires (7 days of inactivity)
+- User clears browser data
+
+---
+
+## 6. Database Schema
+
+### User Tables Relationship
+
+```
+┌─────────────────┐         ┌─────────────────┐
+│   auth.users    │         │  public.users   │
+│   (Supabase)    │         │  (Application)  │
+├─────────────────┤         ├─────────────────┤
+│ id (UUID) PK    │◄───────►│ auth_id (UUID)  │
+│ email           │         │ id (UUID) PK    │
+│ created_at      │         │ email           │
+│ ...             │         │ first_name      │
+└─────────────────┘         │ last_name       │
+                            │ phone           │
+                            │ company         │
+                            │ accepted_habeas │
+                            │ created_at      │
+                            └─────────────────┘
+```
+
+### Auto User Creation Trigger
+
+When a user authenticates for the first time, a database trigger automatically creates their profile:
+
+```sql
+-- Trigger: on_auth_user_created
+-- Creates public.users record when auth.users is created
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+```
+
+---
+
+## 7. Row Level Security (RLS)
+
+All tables use RLS to ensure users can only access their own data.
+
+### Policy Pattern
+
+```sql
+-- Users can only view their own data
+CREATE POLICY "Users can view own profile" ON users
+  FOR SELECT USING (auth.uid() = auth_id);
+
+-- Users can only view their own quotations
+CREATE POLICY "Users can view own quotations" ON quotations
+  FOR SELECT USING (
+    user_id IN (SELECT id FROM users WHERE auth_id = auth.uid())
+  );
+```
+
+### Protected Tables
+
+| Table | Policy |
+|-------|--------|
+| `users` | Own profile only |
+| `quotations` | Own quotations only |
+| `user_mosaics` | Own saved designs only |
+| `mosaics` | Public read access |
+
+---
+
+## 8. Security Controls
 
 ### Mandatory Controls
-- **One-Time Password (OTP)**
-  - Expiration time: **≤ 10 minutes**
-  - Single-use only
-- **Rate limiting**
-  - Maximum **5 verification attempts per email**
-- **Session tokens**
-  - Short-lived access tokens (JWT)
-  - Rotating refresh tokens
-- **Cookies**
-  - `httpOnly`
-  - `secure`
-  - `sameSite=lax`
 
-These controls reduce the risk of brute-force attacks, session hijacking, and token leakage.
+| Control | Implementation |
+|---------|----------------|
+| OTP Expiration | 10 minutes |
+| OTP Single-Use | Invalidated after verification |
+| Rate Limiting | Supabase default (5 attempts/email) |
+| Token Rotation | Refresh tokens rotate on use |
+| Secure Storage | `localStorage` with JWT |
 
----
+### Cookie Configuration (if using SSR)
 
-## 9. Authorization & Row Level Security (RLS)
-
-Authorization is enforced using Supabase Row Level Security (RLS).
-
-### Conceptual Policy
-- A user can only access:
-  - Their own profile data
-  - Resources associated with their `user_id`
-
-```text
-Policy: user_can_read_own_data
-Condition: auth.uid() = user_id
+```javascript
+{
+  httpOnly: true,
+  secure: true,  // HTTPS only
+  sameSite: 'lax'
+}
 ```
 
-## 10. User Experience (UX)
+---
 
-### UI States
-- Loading state while sending the authentication code
-- Error state for invalid or expired codes
-- Option to resend the authentication code
-- Successful login confirmation
+## 9. Frontend Implementation
 
-The interface should clearly guide the user through each step and provide immediate feedback.
+### Components
 
-### Suggested Copy
-- “We sent a code to your email”
-- “The code expires in 10 minutes”
-- “Didn’t receive it? Resend the code”
+| Component | Purpose |
+|-----------|---------|
+| `AuthContext` | Global auth state management |
+| `useAuth` | Hook to access auth state |
+| `AuthModal` | Login modal with OTP flow |
+| `OtpInput` | 6-digit code input |
+| `OtpVerification` | Code entry screen |
+| `EmailForm` | Email input form |
+| `UserMenu` | Header dropdown with user info |
+
+### Auth Functions
+
+```typescript
+// Send OTP code to email
+sendOtpCode(email: string): Promise<{ error: Error | null }>
+
+// Verify the OTP code
+verifyOtpCode(email: string, code: string): Promise<{ error: Error | null }>
+
+// Sign out
+signOut(): Promise<void>
+
+// Get current session
+getSession(): Promise<{ session: Session | null }>
+```
 
 ---
 
-## 11. Metrics & Monitoring
-To ensure reliability and continuously improve the authentication flow, the following metrics should be tracked:
-- Successful login rate
-- Average authentication time
-- OTP retry rate
-- Email delivery failure rate
+## 10. Quotation Flow with Authentication
 
-These metrics help identify user friction and operational issues early.
-
----
-
-## 12. Future Enhancements
-The authentication system is designed to support incremental improvements, including:
-- Multi-factor authentication (MFA)
-- Passkeys / WebAuthn support
-- Phone-based authentication (SMS OTP)
-- Advanced role and permission management
-
----
-
-## 13. Key Benefits
-- No passwords to manage or reset
-- Reduced friction during login
-- Smaller attack surface compared to password-based systems
-- Faster and smoother user onboarding
-
----
-
-## 14. Risks and Mitigations
-
-| Risk | Mitigation |
-|------|------------|
-| Email delivery delays | Resend option and Magic Link fallback |
-| OTP brute-force attempts | Rate limiting and short OTP expiration |
-| Session hijacking | Short-lived tokens and secure cookies |
+```
+┌─────────────────────────────────────────────────────────────┐
+│  User designs mosaic                                        │
+│         ↓                                                   │
+│  Clicks "Cotizar" (Quote)                                   │
+│         ↓                                                   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Is user authenticated?                              │   │
+│  │         │                                            │   │
+│  │    NO ──┼──► Show OTP flow (email → code → verify)  │   │
+│  │         │                                            │   │
+│  │   YES ──┼──► Show quote form directly               │   │
+│  └─────────────────────────────────────────────────────┘   │
+│         ↓                                                   │
+│  User completes quote form                                  │
+│  (name, phone, quantity, Habeas Data consent)               │
+│         ↓                                                   │
+│  Quotation saved to database                                │
+│         ↓                                                   │
+│  Success message shown                                      │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 15. Executive Summary
-Passwordless authentication with Supabase Auth provides a modern, secure, and user-friendly login experience. By eliminating passwords, the system reduces common security risks while improving usability and onboarding speed.
+## 11. Habeas Data Compliance (Colombia)
+
+Before saving any quotation, users must explicitly accept data treatment:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  [ ✓ ] Acepto el tratamiento de datos personales           │
+│        de acuerdo con la Ley de Habeas Data de Colombia.   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Database fields:**
+- `accepted_habeas_data`: Boolean
+- `habeas_data_accepted_at`: Timestamp
+
+---
+
+## 12. Error Handling
+
+### User-Facing Messages
+
+| Error | Message |
+|-------|---------|
+| Invalid code | "Código inválido. Intenta de nuevo." |
+| Expired code | "El código ha expirado. Solicita uno nuevo." |
+| Too many attempts | "Demasiados intentos. Espera unos minutos." |
+| Network error | "Error de conexión. Verifica tu internet." |
+
+### Code Input Validation
+
+- Only numeric characters allowed
+- Automatic cleanup of non-numeric input
+- Clear error state on new input
+
+---
+
+## 13. Metrics & Monitoring
+
+Recommended metrics to track:
+
+| Metric | Purpose |
+|--------|---------|
+| OTP send success rate | Email delivery health |
+| OTP verification success rate | User completion rate |
+| Average verification time | UX friction indicator |
+| Session duration | User engagement |
+| Quotation conversion rate | Business metric |
+
+---
+
+## 14. Future Enhancements
+
+| Enhancement | Priority |
+|-------------|----------|
+| SMS OTP option | Medium |
+| Passkeys / WebAuthn | Low |
+| Remember device | Medium |
+| Admin impersonation | Low |
+
+---
+
+## 15. Key Benefits
+
+- ✅ **No passwords** – Eliminates password-related security risks
+- ✅ **Seamless UX** – User never leaves the app
+- ✅ **Design preservation** – Mosaic work is never lost during auth
+- ✅ **Auto user creation** – Frictionless onboarding
+- ✅ **Secure by default** – Short-lived tokens, RLS policies
+- ✅ **Compliance ready** – Habeas Data consent built-in
+
+---
+
+## 16. Configuration Checklist
+
+### Supabase Dashboard Settings
+
+- [ ] Email templates customized (Spanish)
+- [ ] Site URL configured for redirects
+- [ ] SMTP configured (optional, for custom domain)
+- [ ] Rate limiting enabled
+- [ ] RLS enabled on all tables
+
+### Environment Variables
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+---
+
+## 17. Executive Summary
+
+The authentication system uses **email-based OTP verification** with Supabase Auth. Users authenticate by entering a 6-digit code sent to their email, without ever leaving the application. This preserves their design work and provides a seamless experience.
+
+**Session duration:** ~7 days with auto-refresh  
+**OTP validity:** 10 minutes  
+**Security:** JWT tokens + Row Level Security + Rate limiting
