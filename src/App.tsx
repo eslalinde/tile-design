@@ -5,8 +5,12 @@ import { CategoryNav } from "@/components/CategoryNav";
 import { MosaicGrid } from "@/components/MosaicGrid";
 import { MosaicBuilder } from "@/components/builder";
 import { SavedDesignsGrid } from "@/components/SavedDesignsGrid";
-import { AuthCallback } from "@/components/auth";
-import { useSavedDesigns, type SavedDesign, type SaveDesignInput } from "@/hooks/useSavedDesigns";
+import { AuthCallback, AuthModal } from "@/components/auth";
+import { DesignMigrationModal } from "@/components/designs";
+import { useSavedDesignsUnified, type UnifiedDesign } from "@/hooks/useSavedDesignsUnified";
+import { type SaveDesignInput } from "@/hooks/useSavedDesigns";
+import { useDesignMigration } from "@/hooks/useDesignMigration";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import type { CategoryName } from "@/data/categories";
 import type { Mosaic } from "@/hooks/useMosaics";
@@ -52,8 +56,25 @@ function App() {
   // Step 1 tabs
   const [activeTab, setActiveTab] = useState<Step1Tab>("categories");
   
-  // Saved designs
-  const { designs, saveDesign, updateDesign, deleteDesign, isLoading: isLoadingDesigns } = useSavedDesigns();
+  // Auth state
+  const { isAuthenticated } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Saved designs - unified (local + cloud)
+  const { 
+    allDesigns: designs, 
+    localDesigns,
+    cloudDesigns,
+    saveDesign, 
+    updateDesign, 
+    deleteDesign, 
+    uploadToCloud,
+    uploadAllToCloud,
+    isLoading: isLoadingDesigns 
+  } = useSavedDesignsUnified();
+  
+  // Migration modal
+  const { showMigrationModal, dismissMigration } = useDesignMigration();
   
   // Currently editing a saved design
   const [editingDesignId, setEditingDesignId] = useState<string | null>(null);
@@ -79,13 +100,13 @@ function App() {
   }, []);
 
   // Handle editing a saved design
-  const handleEditSavedDesign = useCallback((design: SavedDesign) => {
+  const handleEditSavedDesign = useCallback((design: UnifiedDesign) => {
     // Create a Mosaic-like object from the saved design to pass to MosaicBuilder
     const mosaicFromDesign: Mosaic = {
       id: design.mosaicId,
       name: design.mosaicName,
       category: design.category,
-      shape: design.shape,
+      shape: design.shape as Mosaic["shape"],
       width: design.width,
       height: design.height,
       svg: design.svg,
@@ -101,13 +122,13 @@ function App() {
     };
     
     setSelectedMosaic(mosaicFromDesign);
-    setSelectedCategory(design.category);
+    setSelectedCategory(design.category as CategoryName);
     setEditingDesignId(design.id);
     setCurrentStep(3);
   }, []);
 
   // Handle saving design from builder
-  const handleSaveDesign = useCallback((
+  const handleSaveDesign = useCallback(async (
     mosaic: Mosaic,
     parts: PartColor[],
     currentSvg: string,
@@ -129,11 +150,13 @@ function App() {
 
     if (editingDesignId) {
       // Update existing design
-      updateDesign(editingDesignId, designInput);
+      await updateDesign(editingDesignId, designInput);
     } else {
       // Save as new design
-      const newDesign = saveDesign(designInput);
-      setEditingDesignId(newDesign.id);
+      const newDesign = await saveDesign(designInput);
+      if (newDesign) {
+        setEditingDesignId(newDesign.id);
+      }
     }
   }, [editingDesignId, saveDesign, updateDesign]);
 
@@ -141,22 +164,45 @@ function App() {
   const getInitialParts = useCallback((): PartColor[] | undefined => {
     if (!editingDesignId) return undefined;
     const design = designs.find(d => d.id === editingDesignId);
-    return design?.parts;
+    return design?.parts as PartColor[] | undefined;
   }, [editingDesignId, designs]);
 
   // Get initial pattern for MosaicBuilder when editing a saved design
   const getInitialPattern = useCallback((): RectanglePattern | undefined => {
     if (!editingDesignId) return undefined;
     const design = designs.find(d => d.id === editingDesignId);
-    return design?.pattern;
+    return design?.pattern as RectanglePattern | undefined;
   }, [editingDesignId, designs]);
 
   // Get initial border for MosaicBuilder when editing a saved design
   const getInitialBorder = useCallback((): BorderState | undefined => {
     if (!editingDesignId) return undefined;
     const design = designs.find(d => d.id === editingDesignId);
-    return design?.border;
+    return design?.border as BorderState | undefined;
   }, [editingDesignId, designs]);
+
+  // Handle migration of local designs to cloud
+  const handleMigrateDesigns = useCallback(async (designIds: string[]) => {
+    for (const id of designIds) {
+      await uploadToCloud(id);
+    }
+    dismissMigration();
+  }, [uploadToCloud, dismissMigration]);
+
+  // Handle upload to cloud for a single design
+  const handleUploadToCloud = useCallback(async (id: string) => {
+    await uploadToCloud(id);
+  }, [uploadToCloud]);
+
+  // Handle upload all to cloud
+  const handleUploadAllToCloud = useCallback(async () => {
+    await uploadAllToCloud();
+  }, [uploadAllToCloud]);
+
+  // Handle login request
+  const handleLoginRequest = useCallback(() => {
+    setShowAuthModal(true);
+  }, []);
 
   // Handle step navigation
   const handleStepClick = useCallback(
@@ -347,10 +393,16 @@ function App() {
                       <div className="rounded-2xl border border-surface-200 bg-white p-6 shadow-card">
                         <SavedDesignsGrid
                           designs={designs}
+                          localDesigns={localDesigns}
+                          cloudDesigns={cloudDesigns}
                           onEditDesign={handleEditSavedDesign}
                           onDeleteDesign={deleteDesign}
+                          onUploadToCloud={handleUploadToCloud}
+                          onUploadAllToCloud={handleUploadAllToCloud}
                           onSwitchToCategories={() => setActiveTab("categories")}
+                          onLogin={handleLoginRequest}
                           isLoading={isLoadingDesigns}
+                          isAuthenticated={isAuthenticated}
                         />
                       </div>
                     </motion.div>
@@ -455,6 +507,21 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
+
+      {/* Design Migration Modal - shows after login if user has local designs */}
+      <DesignMigrationModal
+        isOpen={showMigrationModal}
+        localDesigns={localDesigns}
+        onMigrate={handleMigrateDesigns}
+        onSkip={dismissMigration}
+        onClose={dismissMigration}
+      />
     </Layout>
   );
 }

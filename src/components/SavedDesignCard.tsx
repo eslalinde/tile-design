@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { SavedDesign } from "@/hooks/useSavedDesigns";
-import { Pencil, Trash2, X, Check } from "lucide-react";
+import type { UnifiedDesign, DesignSource } from "@/hooks/useSavedDesignsUnified";
+import { Pencil, Trash2, X, Check, Cloud, Smartphone, Upload, Loader2 } from "lucide-react";
 
 interface SavedDesignCardProps {
-  design: SavedDesign;
-  onEdit: (design: SavedDesign) => void;
+  design: UnifiedDesign;
+  onEdit: (design: UnifiedDesign) => void;
   onDelete: (id: string) => void;
+  onUploadToCloud?: (id: string) => Promise<void>;
+  showSourceBadge?: boolean;
 }
 
 function formatRelativeTime(dateString: string): string {
@@ -25,8 +27,15 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString("en", { day: "numeric", month: "short" });
 }
 
-export function SavedDesignCard({ design, onEdit, onDelete }: SavedDesignCardProps) {
+export function SavedDesignCard({ 
+  design, 
+  onEdit, 
+  onDelete,
+  onUploadToCloud,
+  showSourceBadge = true,
+}: SavedDesignCardProps) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Calculate aspect ratio from width and height
   const aspectRatio = design.width && design.height 
@@ -53,6 +62,21 @@ export function SavedDesignCard({ design, onEdit, onDelete }: SavedDesignCardPro
   const handleCancelDelete = () => {
     setIsConfirmingDelete(false);
   };
+
+  const handleUploadToCloud = async () => {
+    if (!onUploadToCloud || design.source !== "local") return;
+    
+    setIsUploading(true);
+    try {
+      await onUploadToCloud(design.id);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const isLocal = design.source === "local";
+  const isCloud = design.source === "cloud";
+  const isSyncing = design.isSyncing || isUploading;
 
   return (
     <div
@@ -152,6 +176,54 @@ export function SavedDesignCard({ design, onEdit, onDelete }: SavedDesignCardPro
           {design.category}
         </span>
       </div>
+
+      {/* Source badge (local/cloud) */}
+      {showSourceBadge && (
+        <div className="absolute top-2 left-2">
+          {isSyncing ? (
+            <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-100 text-blue-700">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Sync</span>
+            </span>
+          ) : isCloud ? (
+            <span 
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700"
+              title="Saved to cloud"
+            >
+              <Cloud className="h-3 w-3" />
+              <span>Cloud</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleUploadToCloud();
+              }}
+              disabled={!onUploadToCloud || isUploading}
+              className={cn(
+                "flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors",
+                onUploadToCloud 
+                  ? "bg-amber-100 text-amber-700 hover:bg-amber-200 cursor-pointer"
+                  : "bg-surface-100 text-surface-500"
+              )}
+              title={onUploadToCloud ? "Upload to cloud" : "Only on this device"}
+            >
+              {onUploadToCloud ? (
+                <>
+                  <Upload className="h-3 w-3" />
+                  <span>Upload</span>
+                </>
+              ) : (
+                <>
+                  <Smartphone className="h-3 w-3" />
+                  <span>Local</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

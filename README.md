@@ -509,9 +509,10 @@ These solid tiles can be used to create different patterns:
 
 ### Phase 4 – User & Storage
 * [x] Authentication
-* [x] Saved mosaics
-* [ ] Preview generation
-* [ ] Migrar diseños a la cuenta
+* [x] Saved mosaics (localStorage)
+* [x] Saved mosaics (cloud/database) - Unified local + cloud designs
+* [x] Migrate my designs to db - Migration modal on login
+* [ ] Preview generation with fotoSi p
 
 ### Phase 5 – Quotation
 * [ ] Snapshot export
