@@ -6,24 +6,17 @@ export type AuthUser = User;
 export type AuthSession = Session;
 export type UserProfile = Tables<"users">;
 
-// Get the redirect URL for magic link
-function getRedirectUrl(): string {
-  // In development, use localhost
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}/auth/callback`;
-  }
-  return "http://localhost:5173/auth/callback";
-}
-
 /**
- * Send a magic link to the user's email
+ * Send an OTP code to the user's email
  * This creates an account if one doesn't exist (soft signup)
+ * The user will receive a 6-digit code to enter in the app
  */
-export async function sendMagicLink(email: string): Promise<{ error: Error | null }> {
+export async function sendOtpCode(email: string): Promise<{ error: Error | null }> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: getRedirectUrl(),
+      // No redirect - user stays in the app and enters the code
+      shouldCreateUser: true,
     },
   });
 
@@ -32,6 +25,35 @@ export async function sendMagicLink(email: string): Promise<{ error: Error | nul
   }
 
   return { error: null };
+}
+
+/**
+ * Verify the OTP code entered by the user
+ * This completes the authentication process
+ */
+export async function verifyOtpCode(
+  email: string,
+  token: string
+): Promise<{ session: AuthSession | null; error: Error | null }> {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
+
+  if (error) {
+    return { session: null, error: new Error(error.message) };
+  }
+
+  return { session: data.session, error: null };
+}
+
+/**
+ * @deprecated Use sendOtpCode instead - keeps user in the app
+ * Send a magic link to the user's email (redirects user out of app)
+ */
+export async function sendMagicLink(email: string): Promise<{ error: Error | null }> {
+  return sendOtpCode(email);
 }
 
 /**

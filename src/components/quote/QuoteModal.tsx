@@ -1,8 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { EmailForm } from "@/components/auth/EmailForm";
-import { MagicLinkSent } from "@/components/auth/MagicLinkSent";
-import { AuthBenefits } from "@/components/auth/AuthBenefits";
+import { OtpVerification } from "@/components/auth/OtpVerification";
 import { QuoteForm, type QuoteFormData } from "./QuoteForm";
 import { useAuth } from "@/hooks/useAuth";
 import { getOrCreateUserByEmail, updateUserProfile } from "@/lib/auth";
@@ -11,7 +10,7 @@ import type { Mosaic } from "@/hooks/useMosaics";
 import type { PartColor, BorderState } from "@/types/mosaic";
 import { Check } from "lucide-react";
 
-type QuoteStep = "email" | "magic-link-sent" | "form" | "success";
+type QuoteStep = "email" | "otp" | "form" | "success";
 
 interface MosaicSnapshot {
   mosaicId: string;
@@ -41,7 +40,7 @@ export function QuoteModal({
   parts,
   border,
 }: QuoteModalProps) {
-  const { isAuthenticated, user, profile, sendMagicLink } = useAuth();
+  const { isAuthenticated, user, profile, sendOtpCode, verifyOtpCode } = useAuth();
   
   // Determine initial step based on auth state
   const getInitialStep = (): QuoteStep => {
@@ -52,34 +51,72 @@ export function QuoteModal({
   const [step, setStep] = useState<QuoteStep>(getInitialStep);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
-  // Handle email submission - sends magic link but allows form completion before verification
+  // Update step when auth state changes
+  useEffect(() => {
+    if (isAuthenticated && step === "email") {
+      setStep("form");
+    }
+  }, [isAuthenticated, step]);
+
+  // Handle email submission - sends OTP code
   const handleEmailSubmit = useCallback(
     async (emailAddress: string) => {
       setIsLoading(true);
       try {
-        // Send magic link for verification
-        const { error } = await sendMagicLink(emailAddress);
+        const { error } = await sendOtpCode(emailAddress);
         if (error) {
           throw error;
         }
         setEmail(emailAddress);
-        // Go directly to form - user can complete quote before verifying
-        setStep("form");
+        setStep("otp");
       } finally {
         setIsLoading(false);
       }
     },
-    [sendMagicLink]
+    [sendOtpCode]
   );
+
+  // Handle OTP verification
+  const handleVerifyOtp = useCallback(
+    async (code: string) => {
+      setIsVerifying(true);
+      try {
+        const { error } = await verifyOtpCode(email, code);
+        if (error) {
+          throw error;
+        }
+        // After successful verification, go to form
+        setStep("form");
+      } finally {
+        setIsVerifying(false);
+      }
+    },
+    [email, verifyOtpCode]
+  );
+
+  // Handle OTP resend
+  const handleResendOtp = useCallback(async () => {
+    if (!email) return;
+    setIsResending(true);
+    try {
+      const { error } = await sendOtpCode(email);
+      if (error) {
+        throw error;
+      }
+    } finally {
+      setIsResending(false);
+    }
+  }, [email, sendOtpCode]);
 
   // Handle quote form submission
   const handleQuoteSubmit = useCallback(
     async (formData: QuoteFormData) => {
       setIsLoading(true);
       try {
-        const emailToUse = isAuthenticated && user?.email ? user.email : email;
+        const emailToUse = user?.email || email;
 
         // Get or create user
         const { userId, error: userError } = await getOrCreateUserByEmail(
@@ -137,22 +174,8 @@ export function QuoteModal({
         setIsLoading(false);
       }
     },
-    [isAuthenticated, user, email, mosaic, currentSvg, parts, border]
+    [user, email, mosaic, currentSvg, parts, border]
   );
-
-  // Handle magic link resend
-  const handleResend = useCallback(async () => {
-    if (!email) return;
-    setIsResending(true);
-    try {
-      const { error } = await sendMagicLink(email);
-      if (error) {
-        throw error;
-      }
-    } finally {
-      setIsResending(false);
-    }
-  }, [email, sendMagicLink]);
 
   // Handle back to email step
   const handleBackToEmail = useCallback(() => {
@@ -162,9 +185,15 @@ export function QuoteModal({
 
   // Handle modal close
   const handleClose = useCallback(() => {
-    setStep(getInitialStep());
-    setEmail("");
+    // Don't reset if authenticated - keep form state
+    if (!isAuthenticated) {
+      setStep("email");
+      setEmail("");
+    } else {
+      setStep("form");
+    }
     setIsLoading(false);
+    setIsVerifying(false);
     onClose();
   }, [onClose, isAuthenticated]);
 
@@ -173,7 +202,7 @@ export function QuoteModal({
     switch (step) {
       case "email":
         return "Solicitar cotización";
-      case "magic-link-sent":
+      case "otp":
         return undefined;
       case "form":
         return "Completa tu solicitud";
@@ -188,7 +217,7 @@ export function QuoteModal({
   const getDescription = () => {
     switch (step) {
       case "email":
-        return "Ingresa tu correo para recibir la cotización";
+        return "Ingresa tu correo para verificar tu identidad";
       case "form":
         return "Revisa tu diseño y completa los datos";
       default:
@@ -212,10 +241,10 @@ export function QuoteModal({
               <EmailForm
                 onSubmit={handleEmailSubmit}
                 isLoading={isLoading}
-                submitLabel="Continuar"
+                submitLabel="Enviar código"
               />
               <p className="mt-4 text-center text-xs text-surface-500">
-                Te enviaremos un enlace de verificación a tu correo
+                Te enviaremos un código de 6 dígitos para verificar tu identidad
               </p>
             </div>
 
@@ -226,13 +255,30 @@ export function QuoteModal({
           </div>
         )}
 
-        {step === "magic-link-sent" && (
-          <MagicLinkSent
-            email={email}
-            onBack={handleBackToEmail}
-            onResend={handleResend}
-            isResending={isResending}
-          />
+        {step === "otp" && (
+          <div className="grid gap-8 md:grid-cols-2">
+            {/* Left side: OTP verification */}
+            <div>
+              <OtpVerification
+                email={email}
+                onVerify={handleVerifyOtp}
+                onBack={handleBackToEmail}
+                onResend={handleResendOtp}
+                isVerifying={isVerifying}
+                isResending={isResending}
+              />
+            </div>
+
+            {/* Right side: Mosaic preview */}
+            <div className="hidden border-l border-surface-100 pl-8 md:block">
+              <MosaicPreview mosaic={mosaic} svg={currentSvg} />
+              <div className="mt-4 rounded-lg bg-accent-50 p-3">
+                <p className="text-xs text-accent-700">
+                  <strong>Tu diseño está seguro.</strong> Una vez verificado, podrás completar tu cotización.
+                </p>
+              </div>
+            </div>
+          </div>
         )}
 
         {step === "form" && (
@@ -240,7 +286,7 @@ export function QuoteModal({
             {/* Left side: Form */}
             <div className="md:col-span-3">
               <QuoteForm
-                email={isAuthenticated && user?.email ? user.email : email}
+                email={user?.email || email}
                 initialData={{
                   firstName: profile?.first_name ?? "",
                   lastName: profile?.last_name ?? "",
@@ -254,21 +300,12 @@ export function QuoteModal({
             {/* Right side: Mosaic preview */}
             <div className="hidden border-l border-surface-100 pl-8 md:col-span-2 md:block">
               <MosaicPreview mosaic={mosaic} svg={currentSvg} />
-              
-              {/* Verification note for non-authenticated users */}
-              {!isAuthenticated && email && (
-                <div className="mt-4 rounded-lg bg-accent-50 p-3">
-                  <p className="text-xs text-accent-700">
-                    <strong>Nota:</strong> Revisa tu correo ({email}) y haz clic en el enlace para verificar tu cuenta y dar seguimiento a tu cotización.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         )}
 
         {step === "success" && (
-          <SuccessMessage onClose={handleClose} email={email || user?.email || ""} />
+          <SuccessMessage onClose={handleClose} email={user?.email || email} />
         )}
       </div>
     </Modal>

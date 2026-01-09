@@ -5,7 +5,8 @@ import {
   getUser,
   getUserProfile,
   signOut as authSignOut,
-  sendMagicLink as authSendMagicLink,
+  sendOtpCode as authSendOtpCode,
+  verifyOtpCode as authVerifyOtpCode,
   onAuthStateChange,
 } from "@/lib/auth";
 
@@ -18,9 +19,13 @@ interface AuthContextValue {
   isAuthenticated: boolean;
 
   // Actions
-  sendMagicLink: (email: string) => Promise<{ error: Error | null }>;
+  sendOtpCode: (email: string) => Promise<{ error: Error | null }>;
+  verifyOtpCode: (email: string, code: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  
+  /** @deprecated Use sendOtpCode instead */
+  sendMagicLink: (email: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -96,10 +101,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [loadProfile]);
 
-  // Send magic link
-  const sendMagicLink = useCallback(async (email: string) => {
-    return authSendMagicLink(email);
+  // Send OTP code to email
+  const sendOtpCode = useCallback(async (email: string) => {
+    return authSendOtpCode(email);
   }, []);
+
+  // Verify OTP code
+  const verifyOtpCode = useCallback(async (email: string, code: string) => {
+    const { session: newSession, error } = await authVerifyOtpCode(email, code);
+    
+    if (error) {
+      return { error };
+    }
+
+    // Session will be updated via onAuthStateChange listener
+    if (newSession?.user) {
+      setSession(newSession);
+      setUser(newSession.user);
+      await loadProfile(newSession.user.id);
+    }
+
+    return { error: null };
+  }, [loadProfile]);
+
+  // Deprecated: Use sendOtpCode instead
+  const sendMagicLink = useCallback(async (email: string) => {
+    return sendOtpCode(email);
+  }, [sendOtpCode]);
 
   // Sign out
   const signOut = useCallback(async () => {
@@ -122,6 +150,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     profile,
     isLoading,
     isAuthenticated: !!user,
+    sendOtpCode,
+    verifyOtpCode,
     sendMagicLink,
     signOut,
     refreshProfile,
