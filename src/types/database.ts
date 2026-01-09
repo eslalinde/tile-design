@@ -220,32 +220,41 @@ export type Database = {
       users: {
         Row: {
           accepted_habeas_data: boolean
+          auth_id: string | null
           company: string | null
           created_at: string
           email: string
+          first_name: string
           habeas_data_accepted_at: string | null
           id: string
-          name: string
+          last_name: string | null
+          phone: string | null
           updated_at: string
         }
         Insert: {
           accepted_habeas_data?: boolean
+          auth_id?: string | null
           company?: string | null
           created_at?: string
           email: string
+          first_name: string
           habeas_data_accepted_at?: string | null
           id?: string
-          name: string
+          last_name?: string | null
+          phone?: string | null
           updated_at?: string
         }
         Update: {
           accepted_habeas_data?: boolean
+          auth_id?: string | null
           company?: string | null
           created_at?: string
           email?: string
+          first_name?: string
           habeas_data_accepted_at?: string | null
           id?: string
-          name?: string
+          last_name?: string | null
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -255,7 +264,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_or_create_user_by_email: {
+        Args: {
+          p_email: string
+          p_first_name?: string
+          p_last_name?: string
+          p_phone?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       mosaic_shape: "square" | "hexagon" | "rectangle" | "g1"

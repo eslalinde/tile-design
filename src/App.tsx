@@ -1,10 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Layout } from "@/components/layout";
 import { Stepper, defaultSteps } from "@/components/Stepper";
 import { CategoryNav } from "@/components/CategoryNav";
 import { MosaicGrid } from "@/components/MosaicGrid";
 import { MosaicBuilder } from "@/components/builder";
 import { SavedDesignsGrid } from "@/components/SavedDesignsGrid";
+import { AuthCallback } from "@/components/auth";
 import { useSavedDesigns, type SavedDesign, type SaveDesignInput } from "@/hooks/useSavedDesigns";
 import { cn } from "@/lib/utils";
 import type { CategoryName } from "@/data/categories";
@@ -16,7 +17,33 @@ import { motion, AnimatePresence } from "motion/react";
 type AppStep = 1 | 2 | 3 | 4;
 type Step1Tab = "categories" | "saved";
 
+// Check if we're on the auth callback route
+function isAuthCallback(): boolean {
+  return window.location.pathname === "/auth/callback";
+}
+
 function App() {
+  // Check for auth callback route
+  const [showAuthCallback, setShowAuthCallback] = useState(() => isAuthCallback());
+
+  // Listen for URL changes (for SPA navigation)
+  useEffect(() => {
+    const handlePopState = () => {
+      setShowAuthCallback(isAuthCallback());
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  // Handle auth callback completion
+  const handleAuthComplete = useCallback(() => {
+    setShowAuthCallback(false);
+  }, []);
+
+  // If we're on auth callback, show that screen
+  if (showAuthCallback) {
+    return <AuthCallback onComplete={handleAuthComplete} />;
+  }
   // Navigation state
   const [currentStep, setCurrentStep] = useState<AppStep>(1);
   const [selectedCategory, setSelectedCategory] = useState<CategoryName | null>(null);

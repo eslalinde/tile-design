@@ -496,7 +496,7 @@ These solid tiles can be used to create different patterns:
 * [x] Part selection
 * [x] Color changes
 * [x] Rotation
-* [ ] Auto-save
+* [ ] Auto-save (To define)
 * [x] Undo, Redo, Save
 
 ### Phase 3 - Advance Builder
@@ -505,12 +505,13 @@ These solid tiles can be used to create different patterns:
 * [x] Advance border with 3 tiles
 * [x] Hexagonal tiles
 * [x] G1 tiles
-* [ ] Image tiles
+* [ ] Image tiles (To define)
 
 ### Phase 4 – User & Storage
 * [ ] Authentication
 * [x] Saved mosaics
 * [ ] Preview generation
+* [ ] Migrar diseños a la cuenta
 
 ### Phase 5 – Quotation
 * [ ] Snapshot export
@@ -518,10 +519,15 @@ These solid tiles can be used to create different patterns:
 * [ ] Minimal backoffice
 
 ### Phase 6 - Technical Data sheet
-- [ ] Enable technical data sheet
+- [ ] Enable technical data sheet for tiles
 - [ ] 
 
-### Phase 6 – Optimization
+### Phase 7 - Upload mosaicos bien 
+- [ ] Transform all the mosaicos bien design
+- [ ] Create all the rectangular tiles
+- [ ]  
+
+### Phase 8 – Optimization
 * [ ] Color palette from mosaicos
 * [ ] Performance tuning
 * [ ] UX refinement

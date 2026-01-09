@@ -10,6 +10,7 @@ import { TileMatrix, type BorderData } from "./TileMatrix";
 import { PatternSelector } from "./PatternSelector";
 import { BorderSelector } from "./BorderSelector";
 import { getDefaultPattern } from "@/lib/patterns";
+import { QuoteModal } from "@/components/quote";
 
 // Helper to apply colors to SVG
 function applyColorsToSvg(svg: string, parts: PartColor[]): string {
@@ -339,6 +340,9 @@ export function MosaicBuilder({
   // Save feedback state
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   
+  // Quote modal state
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  
   // Pattern state for rectangular tiles
   const [selectedPattern, setSelectedPattern] = useState<RectanglePattern>(
     () => initialPattern || getDefaultPattern(mosaic.shape) || "brick"
@@ -548,7 +552,7 @@ export function MosaicBuilder({
             icon={FileText}
             label="Quote"
             variant="primary"
-            onClick={() => {}}
+            onClick={() => setIsQuoteModalOpen(true)}
           />
         </div>
       </div>
@@ -639,6 +643,16 @@ export function MosaicBuilder({
           } : null}
         />
       </div>
+
+      {/* Quote Modal */}
+      <QuoteModal
+        isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
+        mosaic={mosaic}
+        currentSvg={currentSvg}
+        parts={parts}
+        border={selectedBorder}
+      />
     </div>
   );
 }

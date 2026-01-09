@@ -10,6 +10,7 @@ export const categories: Category[] = [
   { name: "square", display: "Square" },
   { name: "rectangle", display: "Rectangle" },
   { name: "hexagonal", display: "Hexagonal" },
+  { name: "reliefs", display: "Reliefs" },
   { name: "g1", display: "G1" },
 ];
 
